@@ -190,3 +190,7 @@ dialog {
 dialog::backdrop {
 	backdrop-filter:blur(1rem);
 }
+
+#output {
+	font-family: 'Courier New', Courier, monospace;
+}
