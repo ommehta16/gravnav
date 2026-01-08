@@ -22,18 +22,18 @@ body {
 	right:1rem;
 	/* padding:1rem; */
 	z-index: 999;
-	border-radius: 1rem;
+	border-radius: calc(1rem + var(--spinny-border-width));
 
-	border: 1px solid transparent;
+	border: 2px solid transparent;
 
 	backdrop-filter: blur(2rem);
-	background: rgba(0, 0, 0, 0.05);
+	background: rgba(255, 255, 255, 0.6);
 
 	transition: backdrop-filter 0.2s, border 0.2s;
 }
 
 body:not([data-loading]) #overlay {
-	border: 1px solid lightgray;
+	border: 2px solid #aaa;
 	top: 1rem;
 	right:1rem;
 }
@@ -44,19 +44,32 @@ body:not([data-loading]) #overlay {
 	border-radius:1rem;
 	background:#fefefe;
 
-	box-shadow: 0 0 1rem 1rem rgba(0,0,0,0.05) inset;
+	box-shadow: 
+		0 0 1rem 1rem rgba(0,0,0,0.025) inset,
+		0 0.25rem 1rem 1rem rgba(0,0,0,0.05)
+	;
+	transition: background 2s 1s, box-shadow 2s 1s;
+}
 
-	/* backdrop-filter: blur(100rem); */
+body:not([data-loading]) .overlay-interior {
+	background:transparent;
+	box-shadow: 0 0 1rem 1rem rgba(0,0,0,0.05) inset,
+				0 0.25rem 1rem 1rem rgba(0,0,0,0.05);
 }
 
 @property --spinny-border-width {
 	syntax: "<length>";
-	inherits: false;
+	inherits: true;
 	initial-value: 2px;
 }
 
-.loading-spinny-container {
+body {
 	--spinny-border-width: 2px;
+	transition: --spinny-border-width 2s;
+}
+
+.loading-spinny-container {
+	
 
 	overflow:hidden;
 
@@ -66,7 +79,11 @@ body:not([data-loading]) #overlay {
 	border-radius: calc(1rem + var(--spinny-border-width));
 	background:lightgray;
 
-	transition: --spinny-border-width 2s;
+	transition: opacity 2s;
+}
+
+body:not([data-loading]) .loading-spinny-container {
+	opacity: 0;
 }
 
 .loading-spinny-container::before {
@@ -82,30 +99,9 @@ body:not([data-loading]) #overlay {
 	animation: spin 2s linear infinite;
 }
 
-body:not([data-loading]) .loading-spinny-container {
+body:not([data-loading]) {
 	--spinny-border-width: 0;
 }
-
-/* #overlay::before {
-	content:"";
-	background:red;
-
-	width:50%;
-	height:10%;
-
-	position: absolute;
-	z-index:1000;
-	top:0;
-	left:0;
-
-	transform-origin: right center;
-
-	transform: translateY(450%) rotate(0deg) ;
-
-	animation: spin 1s infinite linear;
-
-	overflow:hidden;
-} */
 
 @keyframes spin {
 	0% {
@@ -120,4 +116,77 @@ body:not([data-loading]) .loading-spinny-container {
 h1 {
 	margin:0;
 	display: block;
+}
+
+.info-button {
+	position:absolute;
+	bottom:1rem;
+	right:1rem;
+	display: block;
+	z-index:999;
+
+	backdrop-filter: blur(2rem);
+	background: rgba(255, 255, 255, 0.6);
+	border: 2px solid #aaa;	
+	border-radius:0.5rem;
+
+	font-size: 1rem;
+	padding: 0.25rem;
+	width: 2rem;
+	height:2rem;
+
+	color: #666;
+
+	box-shadow:  0 0.25rem 1rem 1rem rgba(0,0,0,0.05);
+
+	&:hover {
+		cursor: pointer;
+		background: rgba(200,200,200,0.6)
+	}
+
+	&:active {
+		bottom: 0.75rem;
+	}
+
+	transition: background-color 0.2s, bottom 0.2s;
+}
+
+.info-close {
+	position:absolute;
+	top:2rem;
+	right:2rem;
+
+	width:2rem;
+	height:2rem;
+
+	backdrop-filter: blur(2rem);
+	background: rgba(255, 255, 255, 0.6);
+	border: 2px solid #aaa;	
+	border-radius:0.5rem;
+
+	&:hover {
+		cursor: pointer;
+		background: rgba(200,200,200,0.6)
+	}
+
+	&:active {
+		top: 2.25rem;
+	}
+
+	transition: background 0.2s, top 0.2s;
+}
+
+dialog {
+	backdrop-filter: blur(2rem);
+	background: rgba(255, 255, 255, 0.6);
+	border: 2px solid #aaa;	
+	border-radius:1rem;
+
+	padding: 2rem;
+
+	width: min(max-content, calc(100% - 2rem));
+}
+
+dialog::backdrop {
+	backdrop-filter:blur(1rem);
 }
