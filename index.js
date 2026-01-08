@@ -1,9 +1,13 @@
 import {getData, getDataPersist} from "./getdata.js";
 
+const targetName = "Chipotle";
+
+document.querySelector("#big-title").innerHTML = `${targetName} map of the United States`;
+
 const query = `
 [bbox:23,-129,48,-62][out:json][timeout:90];
 
-node["name"="Chipotle"];
+node["name"="${targetName}"];
 
 out geom;
 `;
@@ -18,7 +22,7 @@ function pushUpdate(innerHTML) {
 /** @type {HTMLDivElement} */
 const mapElement = document.querySelector("#map");
 
-const map = L.map(mapElement).setView([39.4, -96.5], 5);
+const map = L.map(mapElement,{zoomControl: false}).setView([39.4, -96.5], 5);
 
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	maxZoom: 19,
@@ -57,8 +61,6 @@ setTimeout(async () => {
 	const elements = data.elements;
 	chipotles = elements.filter(el => el.type==="node");
 
-	pushUpdate(chipotles)
-
 	chipotles.forEach(chip => {
 		const coords = chip;
 
@@ -73,6 +75,7 @@ setTimeout(async () => {
 	});
 	updateChipotleLocations();
 	closePoint.redraw();
+	document.body.attributes.removeNamedItem("data-loading");
 }, 1000);
 
 /** @param {MouseEvent} e */
@@ -99,7 +102,7 @@ map.on("mousemove",e=>{
 	closePoint.setLatLng(bestLocation);
 	closeLine.setLatLngs([coords, bestLocation]);
 
-	pushUpdate(`The closest Chipotle is ${formatDistanceImperial(bestDist)} away`)
+	pushUpdate(`The closest ${targetName} is ${formatDistanceImperial(bestDist)} away`)
 
 });
 

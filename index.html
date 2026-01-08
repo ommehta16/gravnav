@@ -7,6 +7,10 @@
 	<!-- <link rel="icon" href="static/icon.png"> -->
 	<!-- Make an icon once this is like actually working! -->
 
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
@@ -19,11 +23,14 @@
 	<script src="https://kit.fontawesome.com/73bd27aadc.js" crossorigin="anonymous"></script>
 </head>
 
-<body>
+<body data-loading="1">
 	<div id="overlay">
-		<!-- ^^ make this an overlay and fullscreen the map! -->
-		<h1>Chipotle map of the United States</h1>
-		<pre id="output"></pre>
+		<div class="overlay-interior">
+			<div class="loading-spinny-container"></div>
+			<!-- ^^ make this an overlay and fullscreen the map! -->
+			<h1 id="big-title">_______ map of the United States</h1>
+			<pre id="output"></pre>
+		</div>
 	</div>
 	<div id="map"></div>
 </body>

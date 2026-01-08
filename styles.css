@@ -1,3 +1,123 @@
+:root {
+	font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+	overflow:hidden;
+}
+
+body {
+	padding:0;
+	margin:0;
+}
+
 #map {
-	height: 600px;
+	width: 100vw;
+	height: 100svh;
+}
+
+#overlay {
+	position: absolute;
+	top:1rem;
+	left:1rem;
+	width:fit-content;
+	right:1rem;
+	/* padding:1rem; */
+	z-index: 999;
+	border-radius: 1rem;
+
+	border: 1px solid transparent;
+
+	backdrop-filter: blur(2rem);
+	background: rgba(0, 0, 0, 0.05);
+
+	transition: backdrop-filter 0.2s, border 0.2s;
+}
+
+body:not([data-loading]) #overlay {
+	border: 1px solid lightgray;
+	top: 1rem;
+	right:1rem;
+}
+
+.overlay-interior {
+	position: relative;
+	padding:1rem;
+	border-radius:1rem;
+	background:#fefefe;
+
+	box-shadow: 0 0 1rem 1rem rgba(0,0,0,0.05) inset;
+
+	/* backdrop-filter: blur(100rem); */
+}
+
+@property --spinny-border-width {
+	syntax: "<length>";
+	inherits: false;
+	initial-value: 2px;
+}
+
+.loading-spinny-container {
+	--spinny-border-width: 2px;
+
+	overflow:hidden;
+
+	position: absolute;
+	z-index: -1;
+	inset: calc(-1 * var(--spinny-border-width));
+	border-radius: calc(1rem + var(--spinny-border-width));
+	background:lightgray;
+
+	transition: --spinny-border-width 2s;
+}
+
+.loading-spinny-container::before {
+	content: "";
+	background:#0885e4;
+
+	position: absolute;
+	width:80%;
+	height:60%;
+	left: -30%;
+	top: 25%;
+	transform-origin:right center;
+	animation: spin 2s linear infinite;
+}
+
+body:not([data-loading]) .loading-spinny-container {
+	--spinny-border-width: 0;
+}
+
+/* #overlay::before {
+	content:"";
+	background:red;
+
+	width:50%;
+	height:10%;
+
+	position: absolute;
+	z-index:1000;
+	top:0;
+	left:0;
+
+	transform-origin: right center;
+
+	transform: translateY(450%) rotate(0deg) ;
+
+	animation: spin 1s infinite linear;
+
+	overflow:hidden;
+} */
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+
+}
+
+h1 {
+	margin:0;
+	display: block;
 }
