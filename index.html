@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+	<title>GravNav</title>
+	<!-- <link rel="icon" href="static/icon.png"> -->
+	<!-- Make an icon once this is like actually working! -->
+
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+		integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+	<link rel="stylesheet" href="styles.css">
+	<script src="index.js" type="module" defer></script>
+
+	<script src="https://kit.fontawesome.com/73bd27aadc.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+	<div id="overlay">
+		<!-- ^^ make this an overlay and fullscreen the map! -->
+		<h1>Chipotle map of the United States</h1>
+		<pre id="output"></pre>
+	</div>
+	<div id="map"></div>
+</body>
