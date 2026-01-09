@@ -1,16 +1,103 @@
 import {getData, getDataPersist} from "./getdata.js";
 
-const targetName = "Chipotle";
+const targetName = "McDonald's";
 
-document.querySelector("#big-title").innerHTML = `${targetName} map of the United States`;
+document.querySelector("#big-title").innerHTML = `${targetName} Locations`;
 
-const query = `
-[bbox:23,-129,48,-62][out:json][timeout:90];
+const mapCenter = [[25,-100],[50,-60]];
+let bounds = [[25,-100],[50,-60]];
 
-node["name"="${targetName}"];
+let query = "";
 
-out geom;
-`;
+function updateQuery() {
+	query = `
+	[bbox:${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}][out:json][timeout:90];
+
+	node["name"="${targetName}"];
+
+	out geom;
+	`;
+}
+
+/** @param {number} lo		@param {number} val		@param {number} hi */
+const clamp = (lo, val, hi) => Math.min(Math.max(lo, val), hi);
+
+/** @param {[number,number]} location */
+function offsetBounds(location) {
+	const regionWidth = mapCenter[1][1] - mapCenter[0][1];
+	const regionHeight = mapCenter[1][0] - mapCenter[0][0];
+
+	bounds = [
+		[mapCenter[0][0] + regionHeight*location[0], mapCenter[0][1] + regionWidth*location[1]],
+		[mapCenter[1][0] + regionHeight*location[0], mapCenter[1][1] + regionWidth*location[1], ]
+	];
+
+	return bounds;
+}
+
+/** @param {number[][]} bounds */
+function clampBounds(bounds) {
+	return [
+		[
+			clamp(-90, bounds[0][0], 90),
+			clamp(-180, bounds[0][1], 180)
+		],
+		[
+			clamp(-90, bounds[1][0], 90),
+			clamp(-180, bounds[1][1], 180)
+		]
+	];
+}
+
+/** @param {number[][]} bounds */
+const hasArea = (bounds) => bounds[0][0]!=bounds[1][0] && bounds[0][1]!=bounds[1][1];
+
+let boundsRemaining = [];
+
+/** @param {number[][]} loL @param {number[]} item  */
+const includes = (loL, item) => loL.some(lis => 
+	lis.every((val, i)=>val == item[i])
+);
+
+function generateBoundsOrder() {
+
+	console.log("Generating bounds...")
+
+	/** @type {[number,number][]} */
+	let offsets = [[0,0]];
+	
+	/** @type {[number, number][]} */
+	let todo = [[0,0]];
+	
+	while (todo.length > 0) {
+		const curr = todo.pop();
+
+		if (Math.abs(curr[0]) > 10 || Math.abs(curr[1]) > 10) continue;
+
+		if (!curr) return;
+
+		const deltaLoc = [
+			[0,1],
+			[0,-1],
+			[1,0],
+			[-1,0]
+		];
+
+		for (const offset of deltaLoc) {
+			const neighbor = [offset[0]+curr[0], offset[1] + curr[1]];
+			if (includes(offsets,neighbor)) continue;
+			if (!hasArea(clampBounds(offsetBounds(neighbor)))) continue;
+
+			todo.push(neighbor);
+			offsets.push(neighbor);
+		}
+	}
+	console.log("Offsets: ", offsets);
+
+	boundsRemaining = offsets.map(offset => clampBounds(offsetBounds(offset)));	
+	console.log("Bounds Generated: ", boundsRemaining);
+}
+
 
 /**
  * @param {string} innerHTML
@@ -22,12 +109,21 @@ function pushUpdate(innerHTML) {
 /** @type {HTMLDivElement} */
 const mapElement = document.querySelector("#map");
 
-const map = L.map(mapElement,{zoomControl: false, attributionControl: false}).setView([39.4, -96.5], 5);
+const map = L.map(mapElement,{
+	zoomControl: false,
+	attributionControl: false,
+}).setView([39.4, -96.5], 5);
 
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
+
+generateBoundsOrder();
+
+updateQuery();
+
+let rect = L.rectangle(bounds, {color: "#ff7800", weight: 1}).addTo(map);
 
 /**
  * @typedef {{
@@ -35,17 +131,18 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
  * 		lat:number,
  * 		lon:number,
  * 		type:string,
- * 		tags:{}
+ * 		tags: { [key:string]: string|undefined }
  * }} OSMNode
  */
 
 /** @type {OSMNode[]} */
 let chipotles = [];
 
-const mousePoint = L.circle([0,0], {color:"red",fillColor:"#f03", fillOpacity:1, radius:10}).addTo(map);
-const closePoint = L.circle([0,0], {color:"orange",fillColor:"rgb(0, 72, 255)", fillOpacity:1, radius:20}).addTo(map);
+const mousePoint = L.circle([0,0], {color:"red",fillColor:"#f03",fillOpacity:1, radius:10, interactive:false}).addTo(map);
 
+/** @type {any[]} */
 const closeLine = [];
+let circles = [];
 
 function createLines() {
 	for (let i=0;i<Math.min(20, chipotles.length); i++) {
@@ -53,34 +150,59 @@ function createLines() {
 			L.polyline([[0,0],[0,0]],{color:"#d66",weight:1, opacity:0.5}).addTo(map)
 		);
 	}
-	console.log(closeLine);
 }
 
-setTimeout(async () => {
-	const data = await getDataPersist(query,pushUpdate,null,50);
+async function getMap() {
+	if (!boundsRemaining.length) return;
+
+	bounds = boundsRemaining.shift();
+	updateQuery();
+	console.log(query);
+	rect.setBounds(bounds);
+
+	const data = await getDataPersist(query,pushUpdate,undefined,50);
 	if (!data) return;
+	console.log(data);
 
 	/** @type {any[]} */
 	const elements = data.elements;
-	chipotles = elements.filter(el => el.type==="node");
+	chipotles = Array.from((new Set([...elements.filter(el => el.type==="node"), ...chipotles])));
+	console.log(`Recieved ${elements.length} Chipotles. `)
+	const oldcircles = circles;
+
+	circles = [];
 
 	chipotles.forEach(chip => {
 		const coords = chip;
 
-		const huh = L.circle(
-			coords, {
-				color: 'red',
-				fillColor: "#f03",
-				fillOpacity: 0.5,
-				radius: 5
-			}
-		).addTo(map);
+		circles.push(
+				L.circle(
+				coords, {
+					color: 'red',
+					fillColor: "#f03",
+					fillOpacity: 0.5,
+					radius: 5,
+					interactive: false
+				}
+			).addTo(map)
+		);
 	});
+
+	for (const circle of oldcircles) circle.remove();
+
 	createLines();
-	closePoint.redraw();
-	document.body.attributes.removeNamedItem("data-loading");
+	document.body.attributes.getNamedItem("data-loading") && document.body.attributes.removeNamedItem("data-loading");
 	pushUpdate(`<i class="fa-solid fa-check" style="color:#aca"></i> Loaded!`)
-}, 1000);
+
+	console.log("just grabbed map, will do again soon");
+	rect.setBounds([[0,0],[1,1]]);
+
+	L && L.rectangle(bounds, {color: "#51c944ff", weight: 0, opacity: 0.1, fillOpacity: 0.2}).addTo(map);
+
+	setTimeout(getMap,100);
+}
+
+setTimeout(getMap, 100);
 
 /** @param {OSMNode} location the location */
 function locationString(location) {
@@ -109,9 +231,6 @@ map.on("mousemove",e=>{
 
 	if (!byDist.length) return;
 	byDist.sort((a,b) => a[0]-b[0]);
-
-	/** @param {number} lo		@param {number} val		@param {number} hi */
-	const clamp = (lo, val, hi) => Math.min(Math.max(lo, val), hi);
 
 	for (let i=0;i<Math.min(byDist.length, 20); i++) {
 		const [dist, location] = byDist[i];

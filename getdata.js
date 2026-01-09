@@ -1,5 +1,12 @@
 // @ts-check
 
+/** 
+ * @typedef {{
+ * 	[key:string]: {}
+ * }} OSMResponse
+ * 
+ */
+
 /**
  * @param {string} query
  * @returns {Promise<Object|null>}
