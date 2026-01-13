@@ -1,22 +1,30 @@
 import {getData, getDataPersist} from "./getdata.js";
+import "./LinkedList.js";
+import LinkedList from "./LinkedList.js";
 
-const targetName = "McDonald's";
+const targetName = "";
 
-document.querySelector("#big-title").innerHTML = `${targetName} Locations`;
+document.querySelector("#big-title").innerHTML = `[project name goes here!]`;
 
-const mapCenter = [[25,-100],[50,-60]];
-let bounds = [[25,-100],[50,-60]];
+const mapCenter = [[40.67,-74.22], [40.71, -74.14]];
+// [[25,-100],[50,-60]];
+let bounds = mapCenter.map(a=>[...a]);
 
 let query = "";
 
 function updateQuery() {
 	query = `
-	[bbox:${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}][out:json][timeout:90];
+	[bbox:${bounds[0][0]},${bounds[0][1]}, ${bounds[1][0]}, ${bounds[1][1]}][out:json][timeout:90];
 
-	node["name"="${targetName}"];
-
-	out geom;
+	way["highway"~"^(trunk|primary|secondary|tertiary|unclassified|residential|road|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|service|motorway)$"];
+	out geom qt;
 	`;
+	// query = `[bbox:${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}][out:json][timeout:90];
+
+	// node["name"="${targetName}"];
+
+	// out geom;
+	// `;
 }
 
 /** @param {number} lo		@param {number} val		@param {number} hi */
@@ -66,13 +74,13 @@ function generateBoundsOrder() {
 	/** @type {[number,number][]} */
 	let offsets = [[0,0]];
 	
-	/** @type {[number, number][]} */
-	let todo = [[0,0]];
+	/** @type {LinkedList<number[]>} */
+	let todo = new LinkedList();
+	todo.push([0,0]);
 	
 	while (todo.length > 0) {
 		const curr = todo.pop();
-
-		if (Math.abs(curr[0]) > 10 || Math.abs(curr[1]) > 10) continue;
+		if (offsets.length > 5_000) break;
 
 		if (!curr) return;
 
@@ -92,18 +100,21 @@ function generateBoundsOrder() {
 			offsets.push(neighbor);
 		}
 	}
-	console.log("Offsets: ", offsets);
+	console.log("Generated!")
+	// console.log("Offsets: ", offsets);
 
-	boundsRemaining = offsets.map(offset => clampBounds(offsetBounds(offset)));	
-	console.log("Bounds Generated: ", boundsRemaining);
+	boundsRemaining = offsets.map(offset => clampBounds(offsetBounds(offset))).toReversed();	
+	// console.log("Bounds Generated: ", boundsRemaining);
 }
 
+
+let contentPreserved = ``;
 
 /**
  * @param {string} innerHTML
  */
 function pushUpdate(innerHTML) {
-	document.querySelector("#output").innerHTML = innerHTML;
+	document.querySelector("#output").innerHTML = contentPreserved + innerHTML;
 }
 
 /** @type {HTMLDivElement} */
@@ -112,6 +123,7 @@ const mapElement = document.querySelector("#map");
 const map = L.map(mapElement,{
 	zoomControl: false,
 	attributionControl: false,
+	preferCanvas:true
 }).setView([39.4, -96.5], 5);
 
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -151,21 +163,76 @@ function createLines() {
 		);
 	}
 }
+/** 
+ * @typedef {{
+ * 	id:number;
+ *  geometry: {
+ * 		lat: number,
+ * 		lon: number
+ * 	}[];
+ *  tags:{[string]:string};
+ * }} OSMWay
+ */
+
+/** @type {OSMWay[]} */
+let roads = [];
+
+let roadLines = [];
 
 async function getMap() {
 	if (!boundsRemaining.length) return;
 
-	bounds = boundsRemaining.shift();
+	bounds = boundsRemaining.pop();
 	updateQuery();
-	console.log(query);
+	// console.log(query);
 	rect.setBounds(bounds);
 
-	const data = await getDataPersist(query,pushUpdate,undefined,50);
+	const data = await getDataPersist(query,undefined,undefined,50);
 	if (!data) return;
-	console.log(data);
+	// console.log(data);
 
 	/** @type {any[]} */
 	const elements = data.elements;
+	
+	roads = Array.from(new Set([...elements.filter(el=>el.type==="way"),...roads]));
+	const oldRoadLines = roadLines;
+
+	roadLines = roads.map(rd => {
+		if (!([
+			"trunk",
+			"primary",
+			"secondary",
+			// "tertiary",
+			"motorway",
+		].includes(rd.tags["highway"]))) return null;
+		
+		const points = rd.geometry.map(coord => [coord.lat, coord.lon]);
+		return L.polyline(points,{color:"#0f0",weight:1, opacity:1}).addTo(map);
+	}).filter(el => el);
+
+	oldRoadLines.forEach(el => el.remove());
+	
+	let repeatedIDs = {};
+
+	/** @type {Set<number>} */
+	let seenIDs = new Set();
+
+	roads.forEach(rd => {
+		if (rd.id in repeatedIDs) {
+			repeatedIDs[rd.id]++;
+			return;
+		}
+
+		if (seenIDs.has(rd.id)) {
+			repeatedIDs[rd.id]=1;
+			return;
+		}
+
+		seenIDs.add(rd.id);
+	});
+
+	console.log("Repeated: ", repeatedIDs);
+
 	chipotles = Array.from((new Set([...elements.filter(el => el.type==="node"), ...chipotles])));
 	console.log(`Recieved ${elements.length} Chipotles. `)
 	const oldcircles = circles;
@@ -192,17 +259,15 @@ async function getMap() {
 
 	createLines();
 	document.body.attributes.getNamedItem("data-loading") && document.body.attributes.removeNamedItem("data-loading");
-	pushUpdate(`<i class="fa-solid fa-check" style="color:#aca"></i> Loaded!`)
+	pushUpdate(`<i class="fa-solid fa-check" style="color:#aca"></i> Loaded ${roads.length} ways = ${roadLines.length} roadlines`);
 
 	console.log("just grabbed map, will do again soon");
 	rect.setBounds([[0,0],[1,1]]);
 
-	L && L.rectangle(bounds, {color: "#51c944ff", weight: 0, opacity: 0.1, fillOpacity: 0.2}).addTo(map);
-
-	setTimeout(getMap,100);
+	setTimeout(getMap,0);
 }
 
-setTimeout(getMap, 100);
+setTimeout(getMap, 1000);
 
 /** @param {OSMNode} location the location */
 function locationString(location) {
@@ -248,6 +313,30 @@ map.on("mousemove",e=>{
 
 	pushUpdate(`${loc && (loc + ": ")}${formatDistanceImperial(byDist[0][0])} away`);
 
+});
+
+let chosenPoints = [null, null];
+
+/** 
+ * @typedef {{
+ * 	lat:number,
+ * 	lng:number,
+ * 	alt?:number
+ * }} LatLng;
+ * 
+ * @typedef {{
+ * 	latlng: LatLng,
+ * 	layerPoint: {},
+ * 	containerPoint: {},
+ * }} LeafletMouseEvent;
+ */
+
+map.on("click",/** @param {LeafletMouseEvent} e */ e=> {
+	contentPreserved += `Clicked @ ${e.latlng.lat}, ${e.latlng.lng}<br />`;
+
+	if (!chosenPoints[0]) chosenPoints[0] = [e.latlng.lat, e.latlng.lng];
+	else if (!chosenPoints[1]) chosenPoints[1] = [e.latlng.lat, e.latlng.lng];
+	else chosenPoints = [[e.latlng.lat,e.latlng.lng],null];
 });
 
 /** 

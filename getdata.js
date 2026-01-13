@@ -7,13 +7,25 @@
  * 
  */
 
+
+let OSM_API_URL = document.body.getAttribute("OSM-API-URL") || "http://127.0.0.1:3000"; // "https://overpass-api.de/api/interpreter";
+document.body.setAttribute("OSM-API-URL",OSM_API_URL);
+
+if (OSM_API_URL == "http://127.0.0.1:3000") {
+	fetch(`${OSM_API_URL}/hello`).then(()=>{}, err=>{
+		console.log("Tried to grab localhost, got ", err);
+		OSM_API_URL = "https://overpass-api.de/api/interpreter";
+		console.log(`Could not find local dev server, switching to ${OSM_API_URL}`)
+	});
+}
+
 /**
  * @param {string} query
  * @returns {Promise<Object|null>}
  */
 export async function getData(query) {
 	const res = await fetch(
-		"https://overpass-api.de/api/interpreter",
+		OSM_API_URL,
 		{
 			method:"POST",
 			body: "data=" + encodeURIComponent(query)
