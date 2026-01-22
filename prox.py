@@ -77,8 +77,8 @@ def do_api():
 	if res.status_code != 200:
 		abort(res.status_code)
 		return
-	if time.time() - last_save > 5*MINUTES:
-		save_mem()
+	# if time.time() - last_save > 5*MINUTES:
+	# 	save_mem()
 
 	last_save = time.time()
 	jason = res.json()
