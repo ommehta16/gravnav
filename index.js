@@ -211,10 +211,10 @@ async function getMap() {
 	/** @type {{elements:OSMWay[]}}} */
 	console.log("bouta get data");
 	// @ts-ignore
-	const data = await getDataPersist(query,pushUpdate,undefined,50);
+	const data = await getDataPersist(query,undefined,undefined,50);
 	if (!data) return;
 	// console.log(data);
-
+	for (const key in data) console.log(key);
 	/** @type {OSMWay[]} */
 	const elements = data.elements;
 	const roads = elements.filter(el=>el.type==="way" && !nodes.has(el.id));
