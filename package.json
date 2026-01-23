@@ -1,0 +1,24 @@
+{
+  "name": "gravnav",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/ommehta16/gravnav#readme",
+  "bugs": {
+    "url": "https://github.com/ommehta16/gravnav/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ommehta16/gravnav.git"
+  },
+  "license": "MIT",
+  "author": "Om Mehta",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
