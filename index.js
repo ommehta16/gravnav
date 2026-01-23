@@ -82,9 +82,17 @@ function offsetBounds(location) {
  * @returns {[number,number][]}
  */
 function clampBounds(bounds) {
+	
+	// 38.02, -77.90 --> 42.50, -69.73 = DC --> NY metro ishhh
+	// return [
+	// 	[ clamp(-90, bounds[0][0], 90), clamp(-180, bounds[0][1], 180) ],
+	// 	[ clamp(-90, bounds[1][0], 90), clamp(-180, bounds[1][1], 180) ]
+	// ];
+	// @ts-ignore
+	L.rectangle([[38.02, -77.90], [42.50, -69.73]], {color: "black", weight: 2,fillColor: "transparent",interactive:false}).addTo(map);
 	return [
-		[ clamp(-90, bounds[0][0], 90), clamp(-180, bounds[0][1], 180) ],
-		[ clamp(-90, bounds[1][0], 90), clamp(-180, bounds[1][1], 180) ]
+		[ clamp(38.02, bounds[0][0], 42.55), clamp(-77.90, bounds[0][1], -69.73) ],
+		[ clamp(38.02, bounds[1][0], 42.50), clamp(-77.90, bounds[1][1], -69.73) ]
 	];
 }
 
