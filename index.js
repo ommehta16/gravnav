@@ -168,7 +168,7 @@ const boundsPromise = generateBoundsOrder()
 	.then(updateQuery);
 
 // @ts-ignore
-let rect = L.rectangle(bounds, {color: "#ff7800", weight: 1}).addTo(map);
+let rect = L.rectangle(bounds, {color: "#ff7800", weight: 1,interactive:false}).addTo(map);
 
 /**
  * @typedef {{
@@ -268,7 +268,7 @@ async function getMap() {
 	});
 
 	// @ts-ignore
-	L.rectangle(bounds, {fillColor: "#8f8", weight: 1, color: "transparent"}).addTo(map);
+	L.rectangle(bounds, {fillColor: "#8f8", weight: 1, color: "transparent",interactive:false}).addTo(map);
 
 	// if (Date.now() - lastRedraw > 6_000_000) {
 		
