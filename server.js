@@ -1,14 +1,14 @@
 const express = require("express");
 const crypto = require("crypto");
-const { cacheSignal } = require("react");
+const fs = require("node:fs");
 
 const app = express();
 const port = 3000;
 
 const OVERPASS_API = "https://overpass-api.de/api/interpreter";
 
-/** @type {Map<string, string>} */
-let cached = new Map();
+/** @type {{[key:string]:string}} */
+let cached = {};
 
 app.use(express.json());
 app.use(express.urlencoded({extended: true}))
@@ -17,24 +17,64 @@ app.get("/hello", (req, res) => {
 	res.send("hi");
 });
 
+async function load() {
+	try {
+		const data = fs.readFileSync("mem.json");
+		cached = JSON.parse(data.toString());
+	} catch {}
+}
+
+function save(attempt=0) {
+	console.log("Saving...");
+	try {
+		fs.writeFileSync("mem.json",JSON.stringify(cached));
+		console.log("Saved!");
+	} catch {
+		if (attempt >= 10) return;
+		console.log(`Could not save, trying again #${attempt+1}`);
+		save(attempt+1);
+	}
+}
+
 app.post("/", async (req,res) => {
 	const hash = crypto.createHash("sha1")
 						.update(encodeURIComponent(req.body))
 						.digest('base64');
 	console.log(`Got request ${hash}`);
-	if (cached.has(hash)) {
-		res.send(cached.get(hash));
+	if (hash in cached) {
+		console.log("hit.");
+		res.send(cached[hash]);
+		console.log("sent");
 		return;
 	}
-	
+	console.log(req.body.data);
+	console.log("Fetching from OSM...");
 	const raw = await fetch(OVERPASS_API,{
 		method: "POST",
 		body: "data=" + encodeURI(req.body.data)
 	});
+	console.log("Got data");
 
-	const data = await raw.text();
+	const data = (await raw.text());
+	cached[hash]=JSON.stringify(data);
 	res.send(data);
-	cached.set(hash,data);
+	console.log("sent");
 });
 
+load().then(()=>console.log("Loaded!"));
+
 app.listen(port,()=>{console.log(`Running server on port ${port}.`);});
+
+process.on("SIGINT",()=>{
+	console.log();
+	console.log("Shutting down gracefully. Ctrl-C again to terminate immediately.");
+	process.on("SIGINT", ()=>process.exit(1));
+	save();
+	process.exit(0);
+});
+
+process.on("SIGTERM", ()=> {
+	console.log();
+	save();
+	process.exit(0);
+})

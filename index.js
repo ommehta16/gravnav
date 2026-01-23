@@ -209,8 +209,9 @@ async function getMap() {
 	rect.setBounds(bounds);
 
 	/** @type {{elements:OSMWay[]}}} */
+	console.log("bouta get data");
 	// @ts-ignore
-	const data = await getDataPersist(query,undefined,undefined,50);
+	const data = await getDataPersist(query,pushUpdate,undefined,50);
 	if (!data) return;
 	// console.log(data);
 

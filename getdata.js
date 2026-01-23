@@ -56,6 +56,7 @@ export async function getDataPersist(query, sendUpdate=null, waitTime=25, maxAtt
 	sendUpdate = sendUpdate || ( (a)=>null );
 	
 	sendUpdate("Getting data...");
+	console.log("Getting data...");
 	const res = await getData(query);
 	if (!res) {
 		if (maxAttempts <= 1) return null;
