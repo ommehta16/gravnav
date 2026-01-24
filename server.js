@@ -38,7 +38,7 @@ function save(attempt=0) {
 
 app.post("/", async (req,res) => {
 	const hash = crypto.createHash("sha1")
-						.update(encodeURIComponent(req.body))
+						.update(encodeURI(req.body.data))
 						.digest('base64');
 	console.log(`Got request ${hash}`);
 	if (hash in cached) {
@@ -47,7 +47,6 @@ app.post("/", async (req,res) => {
 		console.log("sent");
 		return;
 	}
-	console.log(req.body.data);
 	console.log("Fetching from OSM...");
 	const raw = await fetch(OVERPASS_API,{
 		method: "POST",
@@ -55,9 +54,10 @@ app.post("/", async (req,res) => {
 	});
 	console.log("Got data");
 
-	const data = (await raw.text());
-	cached[hash]=JSON.stringify(data);
-	res.send(data);
+	const data = (await raw.json());
+	const processed = {elements:data.elements}; // strip away everything but elements bc... that's the only thing we use!
+	cached[hash]=processed;
+	res.send(JSON.stringify(processed));
 	console.log("sent");
 });
 
