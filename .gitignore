@@ -3,3 +3,7 @@ mem.json
 mem1.json
 .DS_Store
 node_modules
+db/*
+hashes.json
+
+!db/readme.md

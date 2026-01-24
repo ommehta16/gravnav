@@ -8,7 +8,10 @@ const port = 3000;
 const OVERPASS_API = "https://overpass-api.de/api/interpreter";
 
 /** @type {{[key:string]:string}} */
-let cached = {};
+// let cached = {};
+
+/** @type {Set<string>} */
+let hashes = new Set();
 
 app.use(express.json());
 app.use(express.urlencoded({extended: true}))
@@ -19,15 +22,20 @@ app.get("/hello", (req, res) => {
 
 async function load() {
 	try {
-		const data = fs.readFileSync("mem.json");
-		cached = JSON.parse(data.toString());
+		// const data = fs.readFileSync("mem.json");
+		// cached = JSON.parse(data.toString());
+
+		const data = fs.readFileSync("hashes.json");
+		hashes = new Set(JSON.parse(data.toString()));
 	} catch {}
 }
 
 function save(attempt=0) {
 	console.log("Saving...");
 	try {
-		fs.writeFileSync("mem.json",JSON.stringify(cached));
+		// fs.writeFileSync("mem.json",JSON.stringify(cached));
+		
+		fs.writeFileSync("hashes.json", JSON.stringify(Array.from(hashes)));
 		console.log("Saved!");
 	} catch {
 		if (attempt >= 10) return;
@@ -39,13 +47,24 @@ function save(attempt=0) {
 app.post("/", async (req,res) => {
 	const hash = crypto.createHash("sha1")
 						.update(encodeURI(req.body.data))
-						.digest('base64');
+						.digest('base64url');
 	console.log(`Got request ${hash}`);
-	if (hash in cached) {
-		console.log("hit.");
-		res.send(cached[hash]);
-		console.log("sent");
-		return;
+	// if (hash in cached) {
+	// 	console.log("hit.");
+	// 	res.send(cached[hash]);
+	// 	console.log("sent");
+	// 	return;
+	// }
+
+	if (hashes.has(hash)) {
+		try {
+			console.log("hit.")
+			const data = fs.readFileSync(`db/${hash}.json`);
+			res.send(data.toString());
+			console.log("sent!");
+			return;
+		}
+		catch {}
 	}
 	console.log("Fetching from OSM...");
 	const raw = await fetch(OVERPASS_API,{
@@ -56,8 +75,11 @@ app.post("/", async (req,res) => {
 
 	const data = (await raw.json());
 	const processed = {elements:data.elements}; // strip away everything but elements bc... that's the only thing we use!
-	cached[hash]=processed;
-	res.send(JSON.stringify(processed));
+	const stringy = JSON.stringify(processed);
+	res.send(stringy);
+	fs.writeFileSync(`db/${hash}.json`,stringy);
+	hashes.add(hash);
+	
 	console.log("sent");
 });
 
