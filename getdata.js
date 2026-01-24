@@ -34,10 +34,11 @@ export async function getData(query) {
 			body: "data=" + encodeURIComponent(query)
 		}
 	)
+	console.log("Recieved!");
 
 	if (!res.ok) return null;
-
 	const data = await res.json();
+	
 	return data;
 }
 
@@ -58,6 +59,7 @@ export async function getDataPersist(query, sendUpdate=null, waitTime=25, maxAtt
 	sendUpdate("Getting data...");
 	console.log("Getting data...");
 	const res = await getData(query);
+	sendUpdate("Got data!")
 	if (!res) {
 		if (maxAttempts <= 1) return null;
 		sendUpdate(`Getting data...<br />Waiting ${waitTime}ms before trying again`);
@@ -66,6 +68,8 @@ export async function getDataPersist(query, sendUpdate=null, waitTime=25, maxAtt
 		waitTime *= BACKOFF_FACTOR;
 		return await getDataPersist(query, sendUpdate,waitTime,maxAttempts-1);
 	}
+	console.log(`Got data @ ${(new Date()).toLocaleDateString()}`);
+	sendUpdate(`Got data @ ${(new Date()).toLocaleDateString()}`);
 
 	return res;
 }

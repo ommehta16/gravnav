@@ -88,9 +88,6 @@ function offsetBounds(location) {
  * @returns {[number,number][]}
  */
 function clampBounds(bounds) {
-	const clampWithin = // [[38.02,-77.90],[42.50, -69.73]];
-	[[-90, -180], [90, 180]];
-	// 38.02, -77.90 --> 42.50, -69.73 = DC --> NY metro ishhh
 	// return [
 	// 	[ clamp(-90, bounds[0][0], 90), clamp(-180, bounds[0][1], 180) ],
 	// 	[ clamp(-90, bounds[1][0], 90), clamp(-180, bounds[1][1], 180) ]
@@ -221,7 +218,7 @@ async function getMap() {
 	/** @type {{elements:OSMWay[]}}} */
 	console.log("bouta get data");
 	// @ts-ignore
-	const data = await getDataPersist(query,undefined,undefined,50);
+	const data = await getDataPersist(query,pushUpdate,undefined,50);
 	if (!data) return;
 	// console.log(data);
 	for (const key in data) console.log(key);
