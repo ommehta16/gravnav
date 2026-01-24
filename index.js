@@ -11,10 +11,16 @@ document.querySelector("#big-title").innerHTML = `[project name goes here!]`;
 
 /** @type {[number,number][]} */
 const mapCenter = [[40.54, -75.33], [41.31, -74.09]];
-//[[40.67,-74.22], [40.71, -74.14]];
+// [[40.67,-74.22], [40.71, -74.14]];
 // [[25,-100],[50,-60]];
 /** @type {[number,number][]} */
 let bounds = mapCenter.map(a=>[...a]);
+
+const clampWithin = [[40.43, -75.76], [41.93, -71.84]];
+
+	//[[40.44, -74.74],[41.29, -73.03]];
+	//[[38.02,-77.90],[42.50, -69.73]];
+	//[[-90, -180], [90, 180]];
 
 class GraphNode {
 	/** @type {number} */
@@ -82,17 +88,16 @@ function offsetBounds(location) {
  * @returns {[number,number][]}
  */
 function clampBounds(bounds) {
-	
+	const clampWithin = // [[38.02,-77.90],[42.50, -69.73]];
+	[[-90, -180], [90, 180]];
 	// 38.02, -77.90 --> 42.50, -69.73 = DC --> NY metro ishhh
 	// return [
 	// 	[ clamp(-90, bounds[0][0], 90), clamp(-180, bounds[0][1], 180) ],
 	// 	[ clamp(-90, bounds[1][0], 90), clamp(-180, bounds[1][1], 180) ]
 	// ];
-	// @ts-ignore
-	L.rectangle([[38.02, -77.90], [42.50, -69.73]], {color: "black", weight: 2,fillColor: "transparent",interactive:false}).addTo(map);
 	return [
-		[ clamp(38.02, bounds[0][0], 42.55), clamp(-77.90, bounds[0][1], -69.73) ],
-		[ clamp(38.02, bounds[1][0], 42.50), clamp(-77.90, bounds[1][1], -69.73) ]
+		[ clamp(clampWithin[0][0], bounds[0][0], clampWithin[1][0]), clamp(clampWithin[0][1], bounds[0][1], clampWithin[1][1]) ],
+		[ clamp(clampWithin[0][0], bounds[1][0], clampWithin[1][0]), clamp(clampWithin[0][1], bounds[1][1], clampWithin[1][1]) ]
 	];
 }
 
@@ -156,7 +161,8 @@ const map = L.map(mapElement,{
 	zoomControl: false,
 	attributionControl: false,
 	preferCanvas:true
-}).setView([39.4, -96.5], 5);
+}).setView([(mapCenter[0][0] + mapCenter[1][0])/2,(mapCenter[0][1] + mapCenter[1][1])/2], 4);
+
 
 // @ts-ignore
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -166,6 +172,10 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 const boundsPromise = generateBoundsOrder()
 	.then(updateQuery);
+
+
+// @ts-ignore
+const outline = L.rectangle(clampWithin, {color: "black", weight: 2,fillColor: "transparent",interactive:false}).addTo(map);
 
 // @ts-ignore
 let rect = L.rectangle(bounds, {color: "#ff7800", weight: 1,interactive:false}).addTo(map);
