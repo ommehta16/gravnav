@@ -215,9 +215,8 @@ async function getMap() {
 	// console.log(query);
 	rect.setBounds(bounds);
 
-	/** @type {{elements:OSMWay[]}}} */
 	console.log("bouta get data");
-	// @ts-ignore
+	/** @type {{elements:OSMWay[]}}} */ // @ts-ignore
 	const data = await getDataPersist(query,pushUpdate,undefined,50);
 	if (!data) return;
 	// console.log(data);

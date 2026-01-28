@@ -8,7 +8,7 @@
  */
 
 
-let OSM_API_URL = document.body.getAttribute("OSM-API-URL") || "http://127.0.0.1:3000"; // "https://overpass-api.de/api/interpreter";
+let OSM_API_URL = document.body.getAttribute("OSM-API-URL") || "http://104.236.249.234:3000"; // "https://overpass-api.de/api/interpreter";
 document.body.setAttribute("OSM-API-URL",OSM_API_URL);
 
 if (OSM_API_URL == "http://127.0.0.1:3000") {
