@@ -1,0 +1,262 @@
+// @ts-check
+import PriorityQueue from "./PriorityQueue";
+
+/** 
+ * @typedef {{
+ * 	lat:number,
+ * 	lng:number,
+ * 	alt?:number
+ * }|[number, number]} LatLng;
+ */
+
+/** 
+ * @typedef {{
+ * 	id:number;
+ *  geometry: {
+ * 		lat: number,
+ * 		lon: number
+ * 	}[];
+ *	tags:{[key:string]:string};
+ *	nodes: number[];
+ *  type: string;
+ * }} OSMWay
+ */
+
+export class GraphNode {
+	/** @type {number} */
+	id;
+
+	/** @type {LatLng} */
+	coords;
+
+	/** Node ID --> time to reach
+	 * @type {Map<number,number>}
+	 */
+	neighbors;
+
+	/** 
+	 * @param {number} id
+	 * @param {LatLng} latLng
+	 */
+	constructor(id, latLng) {
+		this.id=id;
+		this.coords=latLng;
+		this.neighbors = new Map();
+	}
+}
+
+export class Graph {
+	
+	/** @type {Map<number, GraphNode>} */
+	nodes;
+	constructor() {
+		this.nodes = new Map();
+	}
+
+	/** Find the shortest path between nodes `a` and `b`, using A*
+	 * @param {number} start id of starting node
+	 * @param {number} end id of ending node
+	 */
+	findPath(start, end) {
+		console.log(`Finding path between ${start} and ${end}`);
+
+		/** Parent in optimal traversal: node id --> node id
+		 * @type {Map<number, number>} 
+		 */
+		const bestFrom = new Map();
+
+		/** id --> distance from start to node
+		 * @type {Map<number, number>}
+		 */
+		const distanceTo = new Map();
+
+		/** All IDs that we've seen before
+		 * @type {Set<number>}
+		 */
+		const visited = new Set();
+
+		/**
+		 * @typedef {{
+		 * 	reweighted: number;
+		 * 	distance: number;
+		 * 	to: number;
+		 * }} toCheck 
+		 *  - `reweighted`: the potential-re-weighted distance.
+		 * 
+		 *  - `distance`: path distance from node A -> to.
+		 * 
+		 *  - `to`: target node ID
+		 */
+
+		/** @type {PriorityQueue<toCheck>} */
+		const todo = new PriorityQueue((a,b)=>a.reweighted-b.reweighted);
+		
+		bestFrom.set(start,-1);
+		distanceTo.set(start,0);
+		todo.push({to:start,distance:0,reweighted:0});
+		visited.add(start);
+
+		const destCoords = this.nodes.get(end)?.coords;
+		if (!destCoords) return;
+
+		let found=false;
+		// console.log("hello");
+		let resultDist = 1e18;
+		while (todo.length() && !found) {
+			const check = todo.pop();
+			if (!check) break;
+			const curr = check.to;
+			const startDistance = check.distance;
+
+			const neighbors = this.nodes.get(curr)?.neighbors;
+			if (!neighbors) return;
+
+			for (const [neighbor,edgeLength] of neighbors) {
+				if (visited.has(neighbor)) continue;
+
+				bestFrom.set(neighbor,curr);
+
+				const neighborCoords = this.nodes.get(neighbor)?.coords;
+				if (!neighborCoords) return;
+
+				const dist = startDistance+edgeLength;
+				const distanceRemaining = (distance(neighborCoords,destCoords))/1000;
+				const potential = distanceRemaining/50;
+
+				if (neighbor == end) {
+					// alert("WEVE GOT HIM");
+					console.log("WEVE GOT HIMMMM");
+					found=true;
+					resultDist = dist;
+					break;
+				}
+
+				todo.push({reweighted:dist+potential,distance:dist,to:neighbor});
+				visited.add(neighbor);
+			}
+		}
+
+		let curr = end;
+		
+		/** @type {LatLng[]} */
+		let bruh = [];
+
+		let dist=0;
+		let prev=this.nodes.get(curr);
+		while (curr != -1) {
+			// @ts-ignore
+			bruh.push(nodes.get(curr).coords);
+			// @ts-ignore
+			dist += map.distance(nodes.get(curr).coords, prev.coords);
+			prev=this.nodes.get(curr);
+			
+			// @ts-ignore
+			curr = bestFrom.get(curr);
+		}
+
+		return {
+			latLngs: bruh,
+			navigation: `${Math.round(resultDist*100)/100}hr drive • ${Math.round(dist * 0.000621371*100)/100}mi<br/>`
+		};
+
+		// routeLine.setLatLngs(bruh);
+		// navigation = `${Math.round(resultDist*100)/100}hr drive • ${Math.round(dist * 0.000621371*100)/100}mi<br/>`;
+	}
+
+
+	/** @param {string|number} spdText */
+	static parseSpeed(spdText) {
+		let speed=null;
+		
+		if (Number.isFinite(+spdText)) speed=(+spdText);
+		else {
+			try {
+				// @ts-ignore
+				const [spd,unit] = spdText.split(" ");
+				if (unit == "mph") speed = (+spd) * 1.609344;
+				if (unit == "knots") speed = (+spd) * 1.852;
+			}
+			catch { }
+		}
+		return speed;
+	}
+
+	/** 
+	 * @param {{
+	 * 	elements: OSMWay[]
+	 * }} data
+	 */
+	loadData(data) {
+		/** @type {OSMWay[]} */
+		const elements = data.elements;
+		const roads = elements.filter(el=>el.type==="way" && !this.nodes.has(el.id));
+
+		roads.forEach(rd => {
+			/** Speed in **km/h**
+			 * @type {number} 
+			 */
+			const speed = Graph.parseSpeed(rd.tags.maxspeed ?? 50) ?? 50;
+			
+			rd.nodes.forEach((id, i) => {
+				const coords = rd.geometry[i];
+
+				if (!this.nodes.has(id)) {
+					const node = new GraphNode(id, {lat:coords.lat, lng:coords.lon});
+					this.nodes.set(id, node);
+				}
+
+				const node = this.nodes.get(id);
+				if (!node) return;
+
+				if (i != 0) {
+					/** Distance in **km** @type {number} */
+					const dist = distance(rd.geometry[i-1],coords)/1000;
+					const time = dist/speed;
+					node.neighbors.set(rd.nodes[i-1],time);
+				}
+				if (i != rd.nodes.length-1) {
+					/** Distance in **km** @type {number} */
+					const dist = distance(rd.geometry[i+1],coords)/1000;
+					const time = dist/speed;
+					node.neighbors.set(rd.nodes[i+1],time);
+				}
+
+				// i!=0 				 && node.neighbors.add(rd.nodes[i-1]);
+				// i!=rd.nodes.length-1 && node.neighbors.add(rd.nodes[i+1]);
+			});
+		});
+	}
+}
+
+/** Find the distance between `pt1` and `pt2` in **meters** using the [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula)
+ * @param {LatLng|{lat:number, lon:number}|number[]} pt1
+ * @param {LatLng|{lat:number, lon:number}|number[]} pt2
+ */
+function distance(pt1, pt2) {
+	const [lat1, lon1] = toLatLng(pt1);
+	const [lat2, lon2] = toLatLng(pt2);
+	
+	const R = 6371e3; // radius of earth, meters
+	const latR1 = lat1 * Math.PI/180; // φ, λ in radians
+	const latR2 = lat2 * Math.PI/180;
+	const dLatR = latR2-latR1;
+	const dLonR = (lon2-lon1) * Math.PI/180;
+
+	const a = Math.sin(dLatR/2) * Math.sin(dLatR/2) +
+			  Math.cos(latR1) * Math.cos(latR2) *
+			  Math.sin(dLonR/2) * Math.sin(dLonR/2);
+	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+	const d = R * c; // in metres
+	return d;
+}
+
+/** 
+ * @param {{lat:number, lon:number}|number[]|LatLng} point
+ * @returns {[number, number]};
+ */
+function toLatLng(point) {
+	if ("lon" in point) return [point.lat, point.lon];
+	if ("lat" in point) return [point.lat, point.lng];
+	if (Array.isArray(point)) return [point[0],point[1]];
+	throw new Error(`Point ${point} is not latLng-able`)
+}
