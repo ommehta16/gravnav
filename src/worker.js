@@ -17,7 +17,7 @@ const graph = new Graph();
 const mapCenter = [[40.5, -75], [41.5, -74]];
 /** @type {[number,number][]} */
 let bounds = mapCenter.map(a=>[...a]);
-export const clampWithin = [[39.5, -76], [41.5, -73]];
+const clampWithin = [[39.5, -76], [41.5, -73]];
 
 /** @type {[null|number,null|number]} */
 let chosenPoints = [null, null];
@@ -124,7 +124,7 @@ async function getMap() {
 
 	// @ts-ignore
 	bounds = boundsRemaining.pop();
-
+	console.log(bounds);
 	updateQuery();
 
 	toReturn.bounds = bounds;
@@ -146,7 +146,6 @@ async function getMap() {
 
 /** @param {[number,number]} eventPoint */ 
 async function findPath(eventPoint) {
-	
 	/** 
 	 * @type {{
 	 * 	from: "findPath",

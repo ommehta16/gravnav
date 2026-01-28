@@ -1,7 +1,6 @@
 // @ts-check
 import "./LinkedList.js";
 import "./src/format.js";
-import { clampWithin } from "./src/worker.js";
 /** @import * as L from "./leaflet/dist/leaflet-src.esm.js" */
 
 // @ts-ignore
@@ -15,13 +14,14 @@ const mapCenter = [[40.5, -75], [41.5, -74]];
 // [[40.67,-74.22], [40.71, -74.14]];
 // [[25,-100],[50,-60]];
 
+/** Sync this between here and ./src/worker.js !! */
+const clampWithin = [[39.5, -76], [41.5, -73]];
+
 const mapDataWorker = new Worker("src/worker.js", {type:"module"});
 
 let navigation = "";
 
-/**
- * @param {string} innerHTML
- */
+/** @param {string} innerHTML */
 function pushUpdate(innerHTML) {
 	// @ts-ignore
 	document.querySelector("#output").innerHTML = navigation + innerHTML;
@@ -51,7 +51,6 @@ let boundsRect = L.rectangle([[0,0],[0,0]], {color: "#ff7800", weight: 1,interac
 
 /** @type {any[]} */
 let circles = [];
-
 
 mapDataWorker.addEventListener("message",e=>{
 	/** 
