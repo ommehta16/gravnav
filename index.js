@@ -5,6 +5,7 @@ import "./LinkedList.js";
 import LinkedList from "./LinkedList.js";
 import "./PriorityQueue.js";
 import PriorityQueue from "./PriorityQueue.js";
+// import {Graph, GraphNode} from "./mapData.js";
 
 // @ts-ignore
 document.querySelector("#big-title").innerHTML = `[project name goes here!]`;
@@ -268,61 +269,11 @@ async function getMap() {
 				const time = dist/speed;
 				node.neighbors.set(rd.nodes[i+1],time);
 			}
-
-			// i!=0 				 && node.neighbors.add(rd.nodes[i-1]);
-			// i!=rd.nodes.length-1 && node.neighbors.add(rd.nodes[i+1]);
 		});
 	});
 
 	// @ts-ignore
 	L.rectangle(bounds, {fillColor: "#8f8", weight: 1, color: "transparent",interactive:false}).addTo(map);
-
-	// if (Date.now() - lastRedraw > 6_000_000) {
-		
-	// 	const oldRoadLines = roadLines;
-
-	// 	roadLines = roads.map(rd => {
-	// 		if (!([
-	// 			"trunk",
-	// 			"primary",
-	// 			"secondary",
-	// 			// "tertiary",
-	// 			"motorway",
-	// 		].includes(rd.tags["highway"]))) return null;
-			
-	// 		const points = rd.geometry.map(coord => [coord.lat, coord.lon]);
-	// 		// let hexed = (rd.id % 0xFFFFFF).toString(16);
-	// 		hexed = hexed.substring(0,Math.min(6,hexed.length));
-	// 		return L.polyline(points,{color:`#0f0`,weight:1, opacity:1}).addTo(map);
-	// 	}).filter(el => el);
-
-	// 	oldRoadLines.forEach(el => el.remove());
-	// 	lastRedraw = Date.now();
-	// }
-
-	// chipotles = Array.from((new Set([...elements.filter(el => el.type==="node"), ...chipotles])));
-	// console.log(`Recieved ${elements.length} Chipotles. `)
-	// const oldcircles = circles;
-
-	// circles = [];
-
-	// chipotles.forEach(chip => {
-	// 	const coords = chip;
-
-	// 	circles.push(
-	// 			L.circle(
-	// 			coords, {
-	// 				color: 'red',
-	// 				fillColor: "#f03",
-	// 				fillOpacity: 0.5,
-	// 				radius: 5,
-	// 				interactive: false
-	// 			}
-	// 		).addTo(map)
-	// 	);
-	// });
-
-	// for (const circle of oldcircles) circle.remove();
 
 	document.body.attributes.getNamedItem("data-loading") && document.body.attributes.removeNamedItem("data-loading");
 	// pushUpdate(`
