@@ -247,7 +247,7 @@ export class Graph {
  * @param {LatLng|{lat:number, lon:number}|number[]} pt1
  * @param {LatLng|{lat:number, lon:number}|number[]} pt2
  */
-function distance(pt1, pt2) {
+export function distance(pt1, pt2) {
 	const [lat1, lon1] = toLatLng(pt1);
 	const [lat2, lon2] = toLatLng(pt2);
 	
@@ -269,7 +269,7 @@ function distance(pt1, pt2) {
  * @param {{lat:number, lon:number}|number[]|LatLng} point
  * @returns {[number, number]};
  */
-function toLatLng(point) {
+export function toLatLng(point) {
 	if ("lon" in point) return [point.lat, point.lon];
 	if ("lat" in point) return [point.lat, point.lng];
 	if (Array.isArray(point)) return [point[0],point[1]];
