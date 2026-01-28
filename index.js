@@ -5,6 +5,10 @@ import "./LinkedList.js";
 import LinkedList from "./LinkedList.js";
 import {Graph, GraphNode} from "./src/mapData.js";
 import "./src/format.js";
+/** 
+ * @import {OSMWay, OSMNode} from "./src/mapData.js"
+ * 
+ */
 
 // @ts-ignore
 document.querySelector("#big-title").innerHTML = `gravnav`;
@@ -17,10 +21,11 @@ const mapCenter = [[40.54, -75.33], [41.31, -74.09]];
 /** @type {[number,number][]} */
 let bounds = mapCenter.map(a=>[...a]);
 
-const clampWithin = [[40.43, -75.76], [41.93, -71.84]];
+const clampWithin = [[40.43, -75.33], [41.93, -71.84]];
 //[[-90, -180], [90, 180]];
 
 const graph = new Graph();
+
 // @ts-ignore
 window.graph = graph;
 
@@ -29,14 +34,11 @@ let query = "";
 function updateQuery() {
 	query = `
 	[bbox:${bounds[0][0]},${bounds[0][1]}, ${bounds[1][0]}, ${bounds[1][1]}][out:json][timeout:90];
-
-	way["highway"~"^(trunk|primary|secondary|tertiary|unclassified|residential|road|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|service|motorway)$"];
-	out geom qt;
-	`;
-	// query = `[bbox:${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}][out:json][timeout:90];
-	// node["name"="${targetName}"];
-	// out geom;
-	// `;
+	(
+		way["highway"~"^(trunk|primary|secondary|tertiary|unclassified|residential|road|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|service|motorway)$"];
+		node["name"="Chipotle"];
+	);
+	out geom qt;`;
 }
 
 /** @param {number} lo		@param {number} val		@param {number} hi */
@@ -136,6 +138,8 @@ const map = L.map(mapElement,{
 	preferCanvas:true
 }).setView([(mapCenter[0][0] + mapCenter[1][0])/2,(mapCenter[0][1] + mapCenter[1][1])/2], 4);
 
+// @ts-ignore
+window.map = map;
 
 // @ts-ignore
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -153,32 +157,10 @@ const outline = L.rectangle(clampWithin, {color: "black", weight: 2,fillColor: "
 // @ts-ignore
 let rect = L.rectangle(bounds, {color: "#ff7800", weight: 1,interactive:false}).addTo(map);
 
-/**
- * @typedef {{
- * 		id:number,
- * 		lat:number,
- * 		lon:number,
- * 		type:string,
- * 		tags: { [key:string]: string|undefined }
- * }} OSMNode
- */
-
 // /** @type {OSMNode[]} */
 // let chipotles = [];
-// let circles = [];
-
-/** 
- * @typedef {{
- * 	id:number;
- *  geometry: {
- * 		lat: number,
- * 		lon: number
- * 	}[];
- *	tags:{[key:string]:string};
- *	nodes: number[];
- *  type: string;
- * }} OSMWay
- */
+/** @type {any[]} */
+let circles = [];
 
 async function getMap() {
 	if (!boundsRemaining.length) return;
@@ -194,6 +176,11 @@ async function getMap() {
 	const data = await getDataPersist(query,pushUpdate,undefined,50);
 	if (!data) return;
 	graph.loadData(data);
+	
+	circles.forEach(el=>el.remove());
+	circles = [];
+	// @ts-ignore
+	graph.locations.forEach(loc => circles.push(L.circle(loc).addTo(map)));
 
 	// @ts-ignore
 	L.rectangle(bounds, {fillColor: "#8f8", weight: 1, color: "transparent",interactive:false}).addTo(map);
@@ -227,6 +214,8 @@ let chosenPoints = [null, null];
 
 // @ts-ignore
 let routeLine = L.polyline([[0,0],[1,1]],{color:"#0f0",weight:5, opacity:1,interactive:false}).addTo(map);
+// @ts-ignore
+let routeLineB = L.polyline([[0,0],[1,1]],{color:"#f0f",weight:5, opacity:1,interactive:false}).addTo(map);
 
 // @ts-ignore
 let chosePointCircles =[L.circle( [0,0], { color: 'red', fillColor: "#f03", fillOpacity: 0.5, radius: 20, interactive: false } ).addTo(map), // @ts-ignore				
@@ -251,12 +240,18 @@ map.on("click",/** @param {LeafletMouseEvent} e */ e=> {
 	drawChosenPoints();
 
 	routeLine.setLatLngs([[0,0],[0,0]]);
+	routeLineB.setLatLngs([[0,0],[0,0]]);
 	if (!(chosenPoints[0] && chosenPoints[1])) return;
 
-	const res = graph.findPath(chosenPoints[0],chosenPoints[1]);
+	const res = graph.findPath(chosenPoints[0],chosenPoints[1],0.75);
 	if (!res) return;
 	routeLine.setLatLngs(res.latLngs);
-	navigation = res.navigation;
+
+	const resStinky = graph.findPath(chosenPoints[0],chosenPoints[1],0);
+	if (!resStinky) return;
+	routeLineB.setLatLngs(resStinky.latLngs);
+
+	navigation = res.navigation + "<br>" + resStinky.navigation;
 	pushUpdate("");
 });
 

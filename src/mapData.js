@@ -18,8 +18,18 @@ import PriorityQueue from "./PriorityQueue.js";
  * 	}[];
  *	tags:{[key:string]:string};
  *	nodes: number[];
- *  type: string;
+ *  type: "way";
  * }} OSMWay
+ */
+
+ /**
+ * @typedef {{
+ * 		id:number,
+ * 		lat:number,
+ * 		lon:number,
+ * 		type: "node",
+ * 		tags: { [key:string]: string|undefined }
+ * }} OSMNode
  */
 
 export class GraphNode {
@@ -44,16 +54,19 @@ export class GraphNode {
 
 export class Graph {
 	/** @type {Map<number, GraphNode>} */ nodes;
+	/** @type {Map<number, LatLng>} */ locations;
 
 	constructor() {
 		this.nodes = new Map();
+		this.locations = new Map();
 	}
 
 	/** Find the shortest path between nodes `a` and `b`, using A*
 	 * @param {number} start id of starting node
 	 * @param {number} end id of ending node
+	 * @param {number} chipotleness scaling factor on the impact of chipotle distance on navigation
 	 */
-	findPath(start, end) {
+	findPath(start, end, chipotleness=1) {
 		console.log(`Finding path between ${start} and ${end}`);
 
 		/** Parent in optimal traversal: node id --> node id
@@ -114,6 +127,9 @@ export class Graph {
 				const distanceRemaining = (distance(neighborCoords,destCoords))/1000;
 				const potential = distanceRemaining/50;
 
+				let minChipDist = Infinity;
+				this.locations.forEach(loc=>{minChipDist = Math.min(distance(loc,neighborCoords),minChipDist);});
+
 				if (neighbor == end) {
 					console.log("WEVE GOT HIMMMM!!");
 					found=true;
@@ -121,7 +137,7 @@ export class Graph {
 					break;
 				}
 
-				todo.push({reweighted:dist+potential,distance:dist,to:neighbor});
+				todo.push({reweighted:dist+potential+minChipDist*chipotleness,distance:dist,to:neighbor});
 				visited.add(neighbor);
 			}
 		}
@@ -132,16 +148,17 @@ export class Graph {
 		let bruh = [];
 
 		let dist=0;
-		let prev=this.nodes.get(curr);
+		let prevNode=this.nodes.get(curr);
+		if (!prevNode) throw new Error("bruh");
 		while (curr != -1) {
-			// @ts-ignore
-			bruh.push(nodes.get(curr).coords);
-			// @ts-ignore
-			dist += map.distance(nodes.get(curr).coords, prev.coords);
-			prev=this.nodes.get(curr);
+			const currNode = this.nodes.get(curr);
+			if (!currNode) throw new Error("bruh");
 			
-			// @ts-ignore
-			curr = bestFrom.get(curr);
+			bruh.push(currNode.coords);
+			dist += distance(currNode.coords, prevNode.coords);
+			prevNode=currNode;
+			
+			curr = bestFrom.get(curr) ?? NaN;
 		}
 
 		return {
@@ -176,16 +193,26 @@ export class Graph {
 	 * }} data
 	 */
 	loadData(data) {
-		/** @type {OSMWay[]} */
+		/** @type {(OSMWay|OSMNode)[]} */
 		const elements = data.elements;
+		
+		/** @type {OSMWay[]} */ // @ts-ignore
 		const roads = elements.filter(el=>el.type==="way" && !this.nodes.has(el.id));
-
+		
+		/** @type {OSMNode[]} */ // @ts-ignore
+		const locations = elements.filter(el=>el.type==="node" && !this.locations.has(el.id));
+		locations.forEach(loc => { this.locations.set(loc.id,[loc.lat, loc.lon]); });
+		
 		roads.forEach(rd => {
 			/** Speed in **km/h**
 			 * @type {number} 
 			 */
 			const speed = Graph.parseSpeed(rd.tags.maxspeed ?? 50) ?? 50;
-			
+			let direction=0;
+			if ("oneway" in rd.tags) {
+				if (rd.tags.oneway == "-1") direction=-1;
+				else if (rd.tags.oneway != "no") direction=1;
+			}
 			rd.nodes.forEach((id, i) => {
 				const coords = rd.geometry[i];
 
@@ -197,21 +224,20 @@ export class Graph {
 				const node = this.nodes.get(id);
 				if (!node) return;
 
-				if (i != 0) {
+				// link backwards
+				if (i != 0 && (direction==0 || direction==-1)) {
 					/** Distance in **km** @type {number} */
 					const dist = distance(rd.geometry[i-1],coords)/1000;
 					const time = dist/speed;
 					node.neighbors.set(rd.nodes[i-1],time);
 				}
-				if (i != rd.nodes.length-1) {
+				// link forwards
+				if (i != rd.nodes.length-1 && (direction==0 || direction==1)) {
 					/** Distance in **km** @type {number} */
 					const dist = distance(rd.geometry[i+1],coords)/1000;
 					const time = dist/speed;
 					node.neighbors.set(rd.nodes[i+1],time);
 				}
-
-				// i!=0 				 && node.neighbors.add(rd.nodes[i-1]);
-				// i!=rd.nodes.length-1 && node.neighbors.add(rd.nodes[i+1]);
 			});
 		});
 	}

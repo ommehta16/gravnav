@@ -59,8 +59,8 @@ export async function getDataPersist(query, sendUpdate=null, waitTime=25, maxAtt
 		waitTime *= BACKOFF_FACTOR;
 		return await getDataPersist(query, sendUpdate,waitTime,maxAttempts-1);
 	}
-	console.log(`Got data @ ${(new Date()).toLocaleDateString()}`);
-	sendUpdate(`Got data @ ${(new Date()).toLocaleDateString()}`);
+	console.log(`Got data @ !`);
+	sendUpdate(`Got data @ !`);
 
 	return res;
 }
