@@ -6,7 +6,6 @@ import {Graph, GraphNode, toLatLng, distance} from "./mapData.js";
 import {getDataPersist} from "./getdata.js";
 /** 
  * @import {OSMWay, OSMNode, LatLng} from "./mapData.js"
- * @import {LeafletMouseEvent} from "../index.js"
  */
 
 
@@ -124,7 +123,6 @@ async function getMap() {
 
 	// @ts-ignore
 	bounds = boundsRemaining.pop();
-	console.log(bounds);
 	updateQuery();
 
 	toReturn.bounds = bounds;
@@ -140,7 +138,7 @@ async function getMap() {
 	toReturn.circleLocs = Array.from(graph.locations.values());
 	
 	postMessage(toReturn);
-
+	console.log(`Now has ${graph.nodes.size} nodes, ${graph.locations.size} points`);
 	setTimeout(getMap,0);
 }
 
@@ -186,6 +184,7 @@ async function findPath(eventPoint) {
 		postMessage(toReturn);
 		return;
 	}
+	postMessage({...toReturn,navigation:`<span class="thinking">thinking...</span>`});
 	console.log("searching for path...");
 	const chipotlePath = graph.findPath(chosenPoints[0],chosenPoints[1],0.75);
 	if (!chipotlePath) {
@@ -207,7 +206,6 @@ async function findPath(eventPoint) {
 }
 
 addEventListener("message",e=>{
-	
 	/** 
 	 * @type {{
 	 * 	action:string

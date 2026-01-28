@@ -67,7 +67,7 @@ export class Graph {
 	 * @param {number} chipotleness scaling factor on the impact of chipotle distance on navigation
 	 */
 	findPath(start, end, chipotleness=1) {
-		console.log(`Finding path between ${start} and ${end}`);
+		const SPICINESS = 2;
 
 		/** Parent in optimal traversal: node id --> node id
 		 * @type {Map<number, number>} 
@@ -137,7 +137,7 @@ export class Graph {
 					break;
 				}
 
-				todo.push({reweighted:dist+potential+minChipDist*chipotleness,distance:dist,to:neighbor});
+				todo.push({reweighted:dist+potential*SPICINESS+minChipDist*chipotleness,distance:dist,to:neighbor});
 				visited.add(neighbor);
 			}
 		}

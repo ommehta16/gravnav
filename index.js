@@ -62,8 +62,8 @@ mapDataWorker.addEventListener("message",e=>{
 	 * }|{
 	 * 	from: "findPath",
 	 * 	chosenPoints: [number|null,number|null]|null,
-	 * 	chipotleRoute: (LatLng|[number,number])[]|null,
-	 * 	normalRoute: (LatLng|[number,number])[]|null,
+	 * 	chipotleRoute?: (LatLng|[number,number])[]|null,
+	 * 	normalRoute?: (LatLng|[number,number])[]|null,
 	 * 	navigation: string
 	 * }
 	 * }
@@ -92,8 +92,13 @@ mapDataWorker.addEventListener("message",e=>{
 		if (!data.chosenPoints) return;
 		chosenPoints = data.chosenPoints;
 		drawChosenPoints();
+		
+		navigation=data.navigation;
+		routeLine.setLatLngs(data.chosenPoints);
+		routeLineB.setLatLngs([[0,0],[0,0]]);
+		pushUpdate("");
 
-		if (!data.chipotleRoute || !data.normalRoute || !data.navigation) return;
+		if (!data.chipotleRoute || !data.normalRoute) return;
 		routeLine.setLatLngs(data.chipotleRoute);
 		routeLineB.setLatLngs(data.normalRoute);
 		navigation=data.navigation;
