@@ -1,5 +1,5 @@
 // @ts-check
-import PriorityQueue from "./PriorityQueue";
+import PriorityQueue from "./PriorityQueue.js";
 
 /** 
  * @typedef {{
@@ -23,16 +23,13 @@ import PriorityQueue from "./PriorityQueue";
  */
 
 export class GraphNode {
-	/** @type {number} */
-	id;
+	/** @type {number} */ id;
 
-	/** @type {LatLng} */
-	coords;
+	/** @type {LatLng} */ coords;
 
 	/** Node ID --> time to reach
 	 * @type {Map<number,number>}
-	 */
-	neighbors;
+	 */ neighbors;
 
 	/** 
 	 * @param {number} id
@@ -46,9 +43,8 @@ export class GraphNode {
 }
 
 export class Graph {
-	
-	/** @type {Map<number, GraphNode>} */
-	nodes;
+	/** @type {Map<number, GraphNode>} */ nodes;
+
 	constructor() {
 		this.nodes = new Map();
 	}
@@ -62,18 +58,15 @@ export class Graph {
 
 		/** Parent in optimal traversal: node id --> node id
 		 * @type {Map<number, number>} 
-		 */
-		const bestFrom = new Map();
+		 */ const bestFrom = new Map();
 
 		/** id --> distance from start to node
 		 * @type {Map<number, number>}
-		 */
-		const distanceTo = new Map();
+		 */ const distanceTo = new Map();
 
 		/** All IDs that we've seen before
 		 * @type {Set<number>}
-		 */
-		const visited = new Set();
+		 */ const visited = new Set();
 
 		/**
 		 * @typedef {{
@@ -82,9 +75,7 @@ export class Graph {
 		 * 	to: number;
 		 * }} toCheck 
 		 *  - `reweighted`: the potential-re-weighted distance.
-		 * 
 		 *  - `distance`: path distance from node A -> to.
-		 * 
 		 *  - `to`: target node ID
 		 */
 
@@ -97,10 +88,10 @@ export class Graph {
 		visited.add(start);
 
 		const destCoords = this.nodes.get(end)?.coords;
-		if (!destCoords) return;
+		if (!destCoords) throw new Error("Couldn't find destination coords");
 
 		let found=false;
-		// console.log("hello");
+		
 		let resultDist = 1e18;
 		while (todo.length() && !found) {
 			const check = todo.pop();
@@ -109,7 +100,7 @@ export class Graph {
 			const startDistance = check.distance;
 
 			const neighbors = this.nodes.get(curr)?.neighbors;
-			if (!neighbors) return;
+			if (!neighbors) throw new Error("Neighbors not in graph (?)");
 
 			for (const [neighbor,edgeLength] of neighbors) {
 				if (visited.has(neighbor)) continue;
@@ -117,15 +108,14 @@ export class Graph {
 				bestFrom.set(neighbor,curr);
 
 				const neighborCoords = this.nodes.get(neighbor)?.coords;
-				if (!neighborCoords) return;
+				if (!neighborCoords) throw new Error("Neighbor does not exist (?)");
 
 				const dist = startDistance+edgeLength;
 				const distanceRemaining = (distance(neighborCoords,destCoords))/1000;
 				const potential = distanceRemaining/50;
 
 				if (neighbor == end) {
-					// alert("WEVE GOT HIM");
-					console.log("WEVE GOT HIMMMM");
+					console.log("WEVE GOT HIMMMM!!");
 					found=true;
 					resultDist = dist;
 					break;
@@ -158,21 +148,20 @@ export class Graph {
 			latLngs: bruh,
 			navigation: `${Math.round(resultDist*100)/100}hr drive • ${Math.round(dist * 0.000621371*100)/100}mi<br/>`
 		};
-
-		// routeLine.setLatLngs(bruh);
-		// navigation = `${Math.round(resultDist*100)/100}hr drive • ${Math.round(dist * 0.000621371*100)/100}mi<br/>`;
 	}
 
 
-	/** @param {string|number} spdText */
+	/** Parses speed text from OSM. See [OSM's key:maxspeed](https://wiki.openstreetmap.org/wiki/Key:maxspeed) for more info
+	 * @param {string|number} spdText the text/number from the `maxspeed` tag on an OSM highway/railway/waterway
+	 */
 	static parseSpeed(spdText) {
 		let speed=null;
 		
 		if (Number.isFinite(+spdText)) speed=(+spdText);
 		else {
 			try {
-				// @ts-ignore
-				const [spd,unit] = spdText.split(" ");
+				const [spd,unit] = spdText.toString().split(" ");
+				// see https://wiki.openstreetmap.org/wiki/Key:maxspeed#Values
 				if (unit == "mph") speed = (+spd) * 1.609344;
 				if (unit == "knots") speed = (+spd) * 1.852;
 			}

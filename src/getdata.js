@@ -8,28 +8,18 @@
  */
 
 
-let OSM_API_URL = document.body.getAttribute("OSM-API-URL") || "http://127.0.0.1:3000" // "http://104.236.249.234:3000"; // "https://overpass-api.de/api/interpreter";
-document.body.setAttribute("OSM-API-URL",OSM_API_URL);
-
-if (OSM_API_URL == "http://127.0.0.1:3000") {
-	fetch(`${OSM_API_URL}/hello`).then(()=>{}, err=>{
-		console.log("Tried to grab localhost, got ", err);
-		OSM_API_URL = "https://overpass-api.de/api/interpreter";
-		console.log(`Could not find local dev server, switching to ${OSM_API_URL}`)
-	});
-}
+const OSM_API_URL = "http://127.0.0.1:3000" // "http://104.236.249.234:3000";
 
 /**
  * @param {string} query
  * @returns {Promise<Object|null>}
  */
 export async function getData(query) {
+	console.log(OSM_API_URL);
 	const res = await fetch(
 		OSM_API_URL,
 		{
-			headers: {
-				"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-			},
+			headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
 			method:"POST",
 			body: "data=" + encodeURIComponent(query)
 		}
@@ -38,6 +28,7 @@ export async function getData(query) {
 
 	if (!res.ok) return null;
 	const data = await res.json();
+	console.log("jasoned!");
 	
 	return data;
 }

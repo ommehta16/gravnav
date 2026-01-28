@@ -1,53 +1,28 @@
 // @ts-check
 
-import {getDataPersist} from "./getdata.js";
+import {getDataPersist} from "./src/getdata.js";
 import "./LinkedList.js";
 import LinkedList from "./LinkedList.js";
-import "./PriorityQueue.js";
-import PriorityQueue from "./PriorityQueue.js";
-// import {Graph, GraphNode} from "./mapData.js";
+import {Graph, GraphNode} from "./src/mapData.js";
+import "./src/format.js";
 
 // @ts-ignore
-document.querySelector("#big-title").innerHTML = `[project name goes here!]`;
+document.querySelector("#big-title").innerHTML = `gravnav`;
 
 /** @type {[number,number][]} */
 const mapCenter = [[40.54, -75.33], [41.31, -74.09]];
 // [[40.67,-74.22], [40.71, -74.14]];
 // [[25,-100],[50,-60]];
+
 /** @type {[number,number][]} */
 let bounds = mapCenter.map(a=>[...a]);
 
 const clampWithin = [[40.43, -75.76], [41.93, -71.84]];
+//[[-90, -180], [90, 180]];
 
-	//[[40.44, -74.74],[41.29, -73.03]];
-	//[[38.02,-77.90],[42.50, -69.73]];
-	//[[-90, -180], [90, 180]];
-
-class GraphNode {
-	/** @type {number} */
-	id;
-
-	/** @type {LatLng} */
-	coords;
-
-	/** Node ID --> time to reach
-	 * @type {Map<number,number>}
-	 */
-	neighbors;
-
-	/** 
-	 * @param {number} id
-	 * @param {LatLng} latLng
-	 */
-	constructor(id, latLng) {
-		this.id=id;
-		this.coords=latLng;
-		this.neighbors = new Map();
-	}
-}
-
-/** @type {Map<number, GraphNode>} */
-const nodes= new Map();
+const graph = new Graph();
+// @ts-ignore
+window.graph = graph;
 
 let query = "";
 
@@ -140,7 +115,7 @@ async function generateBoundsOrder() {
 	pushUpdate(`<i class="fa-solid fa-check" style="color:#aca"></i> Bounds Generated!`)
 }
 
-let navigation = ``;
+let navigation = "";
 
 /**
  * @param {string} innerHTML
@@ -188,9 +163,8 @@ let rect = L.rectangle(bounds, {color: "#ff7800", weight: 1,interactive:false}).
  * }} OSMNode
  */
 
-/** @type {OSMNode[]} */
-let chipotles = [];
-
+// /** @type {OSMNode[]} */
+// let chipotles = [];
 // let circles = [];
 
 /** 
@@ -213,73 +187,18 @@ async function getMap() {
 	bounds = boundsRemaining.pop();
 
 	updateQuery();
-	// console.log(query);
 	rect.setBounds(bounds);
 
 	console.log("bouta get data");
 	/** @type {{elements:OSMWay[]}}} */ // @ts-ignore
 	const data = await getDataPersist(query,pushUpdate,undefined,50);
 	if (!data) return;
-	// console.log(data);
-	for (const key in data) console.log(key);
-	/** @type {OSMWay[]} */
-	const elements = data.elements;
-	const roads = elements.filter(el=>el.type==="way" && !nodes.has(el.id));
-
-	roads.forEach(rd => {
-		/** Speed in **km/h**
-		 * @type {number} 
-		 */
-		let speed = 50;
-		if ("maxspeed" in rd.tags) {
-			/** @type {string} */ // @ts-ignore
-			const spdText = rd.tags.maxspeed;
-			if (Number.isFinite(+spdText)) speed=(+spdText);
-			else {
-				try {
-					const [spd,unit] = spdText.split(" ");
-					if (unit == "mph") speed = (+spd) * 1.609344;
-					if (unit == "knots") speed = (+spd) * 1.852;
-				}
-				catch { }
-			}
-		}
-		
-
-		rd.nodes.forEach((id, i) => {
-			const coords = rd.geometry[i];
-
-			if (!nodes.has(id)) {
-				const node = new GraphNode(id, {lat:coords.lat, lng:coords.lon});
-				nodes.set(id, node);
-			}
-
-			const node = nodes.get(id);
-			if (!node) return;
-
-			if (i != 0) {
-				/** Distance in **km** @type {number} */
-				const dist = map.distance(rd.geometry[i-1],coords)/1000;
-				const time = dist/speed;
-				node.neighbors.set(rd.nodes[i-1],time);
-			}
-			if (i != rd.nodes.length-1) {
-				/** Distance in **km** @type {number} */
-				const dist = map.distance(rd.geometry[i+1],coords)/1000;
-				const time = dist/speed;
-				node.neighbors.set(rd.nodes[i+1],time);
-			}
-		});
-	});
+	graph.loadData(data);
 
 	// @ts-ignore
 	L.rectangle(bounds, {fillColor: "#8f8", weight: 1, color: "transparent",interactive:false}).addTo(map);
 
 	document.body.attributes.getNamedItem("data-loading") && document.body.attributes.removeNamedItem("data-loading");
-	// pushUpdate(`
-	// 	<i class="fa-solid fa-check" style="color:#aca"></i>
-	// 	Found ${total}. Loaded ${roads.length} ways = ${roadLines.length} roadlines
-	// `);
 
 	// console.log("just grabbed map, will do again soon");
 	rect.setBounds([[0,0],[1,1]]);
@@ -288,17 +207,6 @@ async function getMap() {
 }
 
 boundsPromise.then(getMap);
-
-/** @param {OSMNode} location the location */
-function locationString(location) {
-	let locationText = "";
-	if (location.tags["addr:street"]) locationText += location.tags["addr:street"];
-	if (location.tags["addr:city"] && location.tags["addr:state"]) locationText += `, ${location.tags["addr:city"]}, ${location.tags["addr:state"]}`;
-	else if (location.tags["addr:city"]) locationText += locationText && ", " + location.tags["addr:city"];
-	else if (location.tags["addr:state"]) locationText += locationText && ", " + location.tags["addr:state"];
-
-	return locationText;
-}
 
 /** 
  * @typedef {{
@@ -329,7 +237,7 @@ map.on("click",/** @param {LeafletMouseEvent} e */ e=> {
 	let bestID = 0;
 	let bestDist = 1e18;
 	
-	nodes.forEach((point) => {
+	graph.nodes.forEach((point) => {
 		if (map.distance(clickPoint,point.coords) < bestDist) {
 			bestDist = map.distance(clickPoint,point.coords);
 			bestID=point.id;
@@ -342,137 +250,19 @@ map.on("click",/** @param {LeafletMouseEvent} e */ e=> {
 
 	drawChosenPoints();
 
-	// console.log(chosenPoints, nodes.has(chosenPoints[0]), nodes.has(chosenPoints[1]));
-	// console.log(nodes.get(chosenPoints[0]));
-	// console.log(nodes.get(chosenPoints[1]));
 	routeLine.setLatLngs([[0,0],[0,0]]);
-	chosenPoints[0] && chosenPoints[1] && findPath(chosenPoints[0],chosenPoints[1]);
+	if (!(chosenPoints[0] && chosenPoints[1])) return;
+
+	const res = graph.findPath(chosenPoints[0],chosenPoints[1]);
+	if (!res) return;
+	routeLine.setLatLngs(res.latLngs);
+	navigation = res.navigation;
+	pushUpdate("");
 });
 
-/** Find the shortest path between nodes `a` and `b`, using A*
- * @param {number} start id of starting node
- * @param {number} end id of ending node
- */
-function findPath(start, end) {
-	if (!(chosenPoints[0] && chosenPoints[1])) return;
-	console.log(`Finding path between ${chosenPoints[0]} and ${chosenPoints[1]}`);
-
-	/** Parent in optimal traversal: node id --> node id
-	 * @type {Map<number, number>} 
-	 */
-	const bestFrom = new Map();
-
-	/** id --> distance from start to node
-	 * @type {Map<number, number>}
-	 */
-	const distanceTo = new Map();
-
-	/** All IDs that we've seen before
-	 * @type {Set<number>}
-	 */
-	const visited = new Set();
-
-	/**
-	 * @typedef {{
-	 * 	reweighted: number;
-	 * 	distance: number;
-	 * 	to: number;
-	 * }} toCheck 
-	 *  - `reweighted`: the potential-re-weighted distance.
-	 * 
-	 *  - `distance`: path distance from node A -> to.
-	 * 
-	 *  - `to`: target node ID
-	 */
-
-	/** @type {PriorityQueue<toCheck>} */
-	const todo = new PriorityQueue((a,b)=>a.reweighted-b.reweighted);
-	
-	bestFrom.set(start,-1);
-	distanceTo.set(start,0);
-	todo.push({to:start,distance:0,reweighted:0});
-	visited.add(start);
-
-	// @ts-ignore
-	const destCoords = nodes.get(end).coords;
-
-	let found=false;
-	// console.log("hello");
-	let dist = 1e18;
-	while (todo.length() && !found) {
-		const check = todo.pop();
-		if (!check) break;
-		const curr = check.to;
-		const startDistance = check.distance;
-		// const coords = nodes.get(curr).coords;
-
-		// @ts-ignore
-		for (const [neighbor,edgeLength] of nodes.get(curr).neighbors) {
-			// console.log(`${curr} -> ${neighbor}`);
-			if (visited.has(neighbor)) continue;
-
-			bestFrom.set(neighbor,curr);
-
-			// @ts-ignore
-			const neighborCoords = nodes.get(neighbor).coords;
-
-			const distance = startDistance+edgeLength;
-			const distanceRemaining = (map.distance(neighborCoords,destCoords))/1000;
-			const potential = distanceRemaining/50;
-
-			if (neighbor == end) {
-				// alert("WEVE GOT HIM");
-				console.log("WEVE GOT HIMMMM");
-				found=true;
-				dist = distance;
-				break;
-			}
-
-			todo.push({reweighted:distance+potential,distance:distance,to:neighbor});
-			visited.add(neighbor);
-		}
-	}
-
-	let curr = end;
-	
-	/** @type {LatLng[]} */
-	let bruh = [];
-
-	let distance=0;
-	let prev=nodes.get(curr);
-	while (curr != -1) {
-		// @ts-ignore
-		bruh.push(nodes.get(curr).coords);
-		// @ts-ignore
-		distance += map.distance(nodes.get(curr).coords, prev.coords);
-		prev=nodes.get(curr);
-		
-		// @ts-ignore
-		curr = bestFrom.get(curr);
-	}
-
-	routeLine.setLatLngs(bruh);
-	navigation = `${Math.round(dist*100)/100}hr drive • ${Math.round(distance * 0.000621371*100)/100}mi<br/>`;
-	pushUpdate("");
-}
-
 function drawChosenPoints() {
-	// @ts-ignore
-	if (chosenPoints[0]) chosePointCircles[0].setLatLng(nodes.get(chosenPoints[0]).coords);
-	// @ts-ignore
-	if (chosenPoints[1]) chosePointCircles[1].setLatLng(nodes.get(chosenPoints[1]).coords);
-}
-
-/** 
- * @param {number} distanceMeters distance in meters
- * @returns {string} distance as text
-*/
-function formatDistanceImperial(distanceMeters) {
-	const MILE = 5280;
-	const feet = distanceMeters * 3.281;
-	
-	if (feet < MILE * 0.5) return `${feet.toLocaleString()}ft`;
-	return `${(feet/MILE).toLocaleString()}mi`;
+	if (chosenPoints[0]) chosePointCircles[0].setLatLng(graph.nodes.get(chosenPoints[0])?.coords);
+	if (chosenPoints[1]) chosePointCircles[1].setLatLng(graph.nodes.get(chosenPoints[1])?.coords);
 }
 
 /** @type {HTMLDialogElement} */ // @ts-ignore
