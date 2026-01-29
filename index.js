@@ -15,9 +15,10 @@ const mapCenter = [[40.5, -75], [41.5, -74]];
 // [[25,-100],[50,-60]];
 
 /** Sync this between here and ./src/worker.js !! */
-const clampWithin = [[39.5, -76], [41.5, -73]];
+const clampWithin = [[40.5, -75], [41.5, -73]];
 
-const mapDataWorker = new Worker("src/worker.js", {type:"module"});
+// @ts-ignore
+const mapDataWorker = window.mapDataWorker = new Worker("src/worker.js", {type:"module"});
 
 let navigation = "";
 
@@ -94,13 +95,16 @@ mapDataWorker.addEventListener("message",e=>{
 		drawChosenPoints();
 		
 		navigation=data.navigation;
+		console.log("data", data);
+		if (!data.chosenPoints[1]) return;
 		routeLine.setLatLngs(data.chosenPoints);
-		routeLineB.setLatLngs([[0,0],[0,0]]);
+		routeLineB.setLatLngs(data.chosenPoints);
 		pushUpdate("");
 
-		if (!data.chipotleRoute || !data.normalRoute) return;
-		routeLine.setLatLngs(data.chipotleRoute);
-		routeLineB.setLatLngs(data.normalRoute);
+		if (!data.normalRoute) return;
+		routeLine.setLatLngs(data.normalRoute);
+		if (!data.chipotleRoute) return;
+		routeLineB.setLatLngs(data.chipotleRoute);
 		navigation=data.navigation;
 		pushUpdate("");
 	}

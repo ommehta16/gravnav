@@ -16,7 +16,7 @@ const graph = new Graph();
 const mapCenter = [[40.5, -75], [41.5, -74]];
 /** @type {[number,number][]} */
 let bounds = mapCenter.map(a=>[...a]);
-const clampWithin = [[39.5, -76], [41.5, -73]];
+const clampWithin = [[40.5, -75], [41.5, -73]];
 
 /** @type {[null|number,null|number]} */
 let chosenPoints = [null, null];
@@ -142,6 +142,7 @@ async function getMap() {
 	setTimeout(getMap,0);
 }
 
+let chipotleness=1;
 /** @param {[number,number]} eventPoint */ 
 async function findPath(eventPoint) {
 	/** 
@@ -186,20 +187,26 @@ async function findPath(eventPoint) {
 	}
 	postMessage({...toReturn,navigation:`<span class="thinking">thinking...</span>`});
 	console.log("searching for path...");
-	const chipotlePath = graph.findPath(chosenPoints[0],chosenPoints[1],0.75);
+	let start=Date.now();
+	const normalPath = graph.findPath(chosenPoints[0],chosenPoints[1],0);
+	toReturn.normalRoute=normalPath.latLngs;
+	console.log(`${(Date.now()-start)/1000} seconds to get normal path`);
+	postMessage({...toReturn,navigation:`<span class="thinking">waiting on Chipotle-d path...</span>`});
+	start=Date.now();
+	
+	const chipotlePath = graph.findPath(chosenPoints[0],chosenPoints[1],chipotleness);
+	console.log("searching for goofy path")
 	if (!chipotlePath) {
 		postMessage(toReturn);
 		return;
 	}
-	console.log("searching for path B...")
-	const normalPath = graph.findPath(chosenPoints[0],chosenPoints[1],0);
+	console.log(`${(Date.now()-start)/1000} seconds to get goofy path`);
 	if (!normalPath) {
 		postMessage(toReturn);
 		return;
 	}
 	console.log("got paths!");
 	toReturn.chipotleRoute=chipotlePath.latLngs;
-	toReturn.normalRoute=normalPath.latLngs;
 
 	toReturn.navigation=chipotlePath.navigation+"<br/>"+normalPath.navigation;
 	postMessage(toReturn);
@@ -210,6 +217,7 @@ addEventListener("message",e=>{
 	 * @type {{
 	 * 	action:string
 	 * 	eventPoint?:[number,number]
+	 * 	value?: number;
 	 * }}
 	 */
 	const data = e.data;
@@ -217,6 +225,10 @@ addEventListener("message",e=>{
 	if (data.action == "findPath") {
 		if (!data.eventPoint) throw new Error(`findPath called with no corresponding event. Message data:\n${data}`);
 		findPath(data.eventPoint);
+	}
+	if (data.action=="setchip") {
+		if (!data.value) return;
+		chipotleness = data.value;
 	}
 })
 

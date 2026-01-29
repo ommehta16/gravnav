@@ -1,5 +1,6 @@
 // @ts-check
 import PriorityQueue from "./PriorityQueue.js";
+import BitWise from "./bitwise.js";
 
 /** 
  * @typedef {{
@@ -83,9 +84,10 @@ export class Graph {
 
 		/**
 		 * @typedef {{
-		 * 	reweighted: number;
-		 * 	distance: number;
-		 * 	to: number;
+		 * 	reweighted: number,
+		 * 	distance: number,
+		 * 	to: number,
+		 * 	locationMask: bigint
 		 * }} toCheck 
 		 *  - `reweighted`: the potential-re-weighted distance.
 		 *  - `distance`: path distance from node A -> to.
@@ -97,7 +99,7 @@ export class Graph {
 		
 		bestFrom.set(start,-1);
 		distanceTo.set(start,0);
-		todo.push({to:start,distance:0,reweighted:0});
+		todo.push({to:start,distance:0,reweighted:0,locationMask:BigInt(0)});
 		visited.add(start);
 
 		const destCoords = this.nodes.get(end)?.coords;
@@ -126,9 +128,22 @@ export class Graph {
 				const dist = startDistance+edgeLength;
 				const distanceRemaining = (distance(neighborCoords,destCoords))/1000;
 				const potential = distanceRemaining/50;
-
+				const radius=10_000;
 				let minChipDist = Infinity;
-				this.locations.forEach(loc=>{minChipDist = Math.min(distance(loc,neighborCoords),minChipDist);});
+				let mask=check.locationMask;
+				let i=0;
+				if (chipotleness!=0) for (const [, loc] of this.locations) {
+					const dist = distance(loc, neighborCoords);
+					minChipDist=Math.min(minChipDist,dist);
+					if (BitWise.get(mask,i) || dist>radius) continue;
+					BitWise.set(mask,i,1);
+					i++;
+				}
+				let chipotlePoints = 0;
+				const distKM = minChipDist/1000;
+				if (chipotleness!=0) {
+					chipotlePoints = 10-Math.min(BitWise.popCount(mask)/10,5)-Math.min(10/distKM, 5);
+				}
 
 				if (neighbor == end) {
 					console.log("WEVE GOT HIMMMM!!");
@@ -137,7 +152,7 @@ export class Graph {
 					break;
 				}
 
-				todo.push({reweighted:dist+potential*SPICINESS+minChipDist*chipotleness,distance:dist,to:neighbor});
+				todo.push({reweighted:(dist+potential*SPICINESS)*(1 + chipotlePoints * chipotleness),distance:dist,to:neighbor,locationMask:mask});
 				visited.add(neighbor);
 			}
 		}

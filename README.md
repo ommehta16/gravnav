@@ -8,6 +8,7 @@ The latest public version is on <https://ommehta16.github.io/gravnav/>. Check it
 
 ## TODO
 - [x] Re-implement the Chipotle gravity!s
+- [ ] Add node-cutting on server-side (i.e. simplify ways before sending = shrink them :) )
 - [ ] Move navigation to server-side
   - [ ] Store all node connections/times in a massive (<25GB though!) SQLite db
   - [ ] Just grab a new point from the db whenever A* wants a new node
