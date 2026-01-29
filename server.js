@@ -1,6 +1,10 @@
 const express = require("express");
 const crypto = require("crypto");
 const fs = require("node:fs");
+const simplify = require("simplify-js");
+/** 
+ * @import {OSMWay, OSMNode, LatLng} from "./src/mapData.js"
+ */
 
 const app = express();
 const port = 3000;
@@ -75,7 +79,7 @@ app.post("/", async (req,res) => {
 
 	const data = (await raw.json());
 	console.log("jsonified");
-	const processed = {elements:data.elements}; // strip away everything but elements bc... that's the only thing we use!
+	const processed = {elements:data.elements}; //simplifyData(data.elements)// {elements:data.elements}; // strip away everything but elements bc... that's the only thing we use!
 	const stringy = JSON.stringify(processed);
 	console.log("Stringified")
 	res.send(stringy);
@@ -83,6 +87,56 @@ app.post("/", async (req,res) => {
 	
 	console.log("sent");
 });
+
+/** bruh
+ * @param {(OSMWay|OSMNode)[]} elements 
+ */
+function simplifyData(elements) {
+	console.log("simplifying...")
+	const start = Date.now();
+	/** @type {{locations:(OSMWay|OSMNode)[]}} */
+	const toReturn = {elements: []};
+
+	/** @type {Map<number,number>} */
+	const pointUses = new Map();
+	for (const element of elements) {
+		if (element.type == "node") {
+			toReturn.elements.push(element);
+			continue;
+		}
+		for (const node of element.nodes) {
+			if (pointUses.has(node)) pointUses.set(node, pointUses.get(node)+1);
+			else pointUses.set(node, 1);
+		}
+	}
+
+	for (const element of elements) {
+		if (element.type=="node") continue;
+		const points = [];
+		const nodes = element.nodes.map((id, i)=>(
+			{ id: id, x: element.geometry[i].lon, y: element.geometry[i].lat, }
+		)
+		);
+
+		for (let i=0;i<nodes.length;i++) {
+			for (let j=i;j<nodes.length-1;j++) {
+				if (pointUses.get(nodes[j].id) <= 1) continue; //ok so its defo duplicated
+							
+				const section = simplify(nodes.slice(i,j+1));
+				points.pop();
+				points.push(...section);
+			}
+		}
+		toReturn.elements.push({
+			type: element.type,
+			tags: element.tags,
+			geometry: points.map(pt=>({lon:pt.x, lat:pt.y})),
+			nodes: points.map(pt=>pt.id)
+		});
+	}
+	console.log(`${Date.now()-start}ms to simplify`);
+	return toReturn;
+}
 
 load().then(()=>console.log("Loaded!"));
 
