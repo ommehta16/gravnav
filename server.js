@@ -80,9 +80,9 @@ app.post("/", async (req,res) => {
 	const data = (await raw.json()).elements;
 	console.log("jsonified");
 	// const processed = {elements:data}; //simplifyData(data.elements)// {elements:data.elements}; // strip away everything but elements bc... that's the only thing we use!
-	const stringy = `{elements:${JSON.stringify(data)}}`;
+	// const stringy = `{elements:${JSON.stringify(data)}}`;
 	console.log("Stringified")
-	res.send(stringy);
+	res.send({elements:data});
 	fs.writeFile(`db/${hash}.json`,stringy,()=>{hashes.add(hash); console.log("saved");});
 	
 	console.log("sent");
