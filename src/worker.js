@@ -13,7 +13,7 @@ console.log("im a worker bee! so loyal. so epic")
 const graph = new Graph();
 
 /** @type {[number,number][]} */
-const mapCenter = [[40.5, -75], [41.5, -74]];
+const mapCenter = [[40.5, -75], [41, -74.75]];
 /** @type {[number,number][]} */
 let bounds = mapCenter.map(a=>[...a]);
 const clampWithin = [[40.5, -75], [41.5, -73]];
