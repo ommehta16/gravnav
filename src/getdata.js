@@ -9,7 +9,7 @@
 
 
 const OSM_API_URL = //"http://127.0.0.1:3000";
-"http://104.236.249.234:3000";
+"https://104.236.249.234:3000";
 
 /**
  * @param {string} query
