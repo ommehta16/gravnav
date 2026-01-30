@@ -83,7 +83,7 @@ app.post("/", async (req,res) => {
 	// const stringy = `{elements:${JSON.stringify(data)}}`;
 	console.log("Stringified")
 	res.send({elements:data});
-	fs.writeFile(`db/${hash}.json`,stringy,()=>{hashes.add(hash); console.log("saved");});
+	fs.writeFile(`db/${hash}.json`,JSON.stringify({elements:data}),()=>{hashes.add(hash); console.log("saved");});
 	
 	console.log("sent");
 });
