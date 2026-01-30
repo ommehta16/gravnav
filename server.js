@@ -91,7 +91,7 @@ app.post("/", async (req,res) => {
 /** bruh
  * @param {(OSMWay|OSMNode)[]} elements 
  */
-function simplifyData(elements) {
+export function simplifyData(elements) {
 	console.log("simplifying...")
 	const start = Date.now();
 	/** @type {{locations:(OSMWay|OSMNode)[]}} */
