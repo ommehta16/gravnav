@@ -1,7 +1,7 @@
-const express = require("express");
-const crypto = require("crypto");
-const fs = require("node:fs");
-const simplify = require("simplify-js");
+import express from "express";
+import crypto from "crypto";
+import fs from "node:fs";
+import simplify from "simplify-js";
 /** 
  * @import {OSMWay, OSMNode, LatLng} from "./src/mapData.js"
  */
@@ -77,13 +77,13 @@ app.post("/", async (req,res) => {
 	});
 	console.log("Got data");
 
-	const data = (await raw.json()).elements;
+	const simplified = simplifyData((await raw.json()).elements);
 	console.log("jsonified");
 	// const processed = {elements:data}; //simplifyData(data.elements)// {elements:data.elements}; // strip away everything but elements bc... that's the only thing we use!
 	// const stringy = `{elements:${JSON.stringify(data)}}`;
 	console.log("Stringified")
-	res.send({elements:data});
-	fs.writeFile(`db/${hash}.json`,JSON.stringify({elements:data}),()=>{hashes.add(hash); console.log("saved");});
+	res.send(simplified);
+	fs.writeFile(`db/${hash}.json`,JSON.stringify(simplified),()=>{hashes.add(hash); console.log("saved");});
 	
 	console.log("sent");
 });
@@ -118,15 +118,35 @@ export function simplifyData(elements) {
 		)
 		);
 
-		for (let i=0;i<nodes.length;i++) {
-			for (let j=i;j<nodes.length-1;j++) {
-				if (pointUses.get(nodes[j].id) <= 1) continue; //ok so its defo duplicated
-							
-				const section = simplify(nodes.slice(i,j+1));
-				points.pop();
-				points.push(...section);
+		let [l, r] = [0,1];
+
+		while (r < nodes.length) {
+			const node = nodes[r];
+			if (pointUses.get(node.id)<=1) {
+				r++;
+				continue;
 			}
+
+			const section = simplify(nodes.slice(l,r+1));
+			points.pop();
+			points.push(...section);
+			l=r;
+			r++;
 		}
+		if (l!=r) {
+			points.pop();
+			const section = simplify(nodes.slice(l,r+1));
+			points.push(...section);
+		}
+		// for (let i=0;i<nodes.length;i++) {
+		// 	for (let j=i;j<nodes.length-1;j++) {
+		// 		if (pointUses.get(nodes[j].id) <= 1) continue; //ok so its defo duplicated
+							
+		// 		const section = simplify(nodes.slice(i,j+1));
+		// 		points.pop();
+		// 		points.push(...section);
+		// 	}
+		// }
 		toReturn.elements.push({
 			type: element.type,
 			tags: element.tags,

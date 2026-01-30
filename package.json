@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "express": "^5.2.1",
+    "pm2": "^6.0.14",
     "simplify-js": "^1.2.4"
   }
 }
