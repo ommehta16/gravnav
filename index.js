@@ -36,7 +36,7 @@ const map = window.map = L.map(mapElement,{
 	zoomControl: false,
 	attributionControl: false,
 	preferCanvas:true
-}).setView([(mapCenter[0][0] + mapCenter[1][0])/2,(mapCenter[0][1] + mapCenter[1][1])/2], 4);
+}).setView([(mapCenter[0][0] + mapCenter[1][0])/2,(mapCenter[0][1] + mapCenter[1][1])/2], 9);
 
 // @ts-ignore
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -66,6 +66,10 @@ mapDataWorker.addEventListener("message",e=>{
 	 * 	chipotleRoute?: (LatLng|[number,number])[]|null,
 	 * 	normalRoute?: (LatLng|[number,number])[]|null,
 	 * 	navigation: string
+	 * }|{
+	 * 	from: "findPathUpdate",
+	 * 	routeDesc: string,
+	 * 	progress: number
 	 * }
 	 * }
 	 */
@@ -95,8 +99,11 @@ mapDataWorker.addEventListener("message",e=>{
 		drawChosenPoints();
 		
 		navigation=data.navigation;
-		console.log("data", data);
-		if (!data.chosenPoints[1]) return;
+
+		if (!data.chosenPoints[1]) {
+			setLoadingBar(0);
+			return;
+		}
 		routeLine.setLatLngs(data.chosenPoints);
 		routeLineB.setLatLngs(data.chosenPoints);
 		pushUpdate("");
@@ -107,8 +114,31 @@ mapDataWorker.addEventListener("message",e=>{
 		routeLineB.setLatLngs(data.chipotleRoute);
 		navigation=data.navigation;
 		pushUpdate("");
+		setLoadingBar(100, "done!");
 	}
-})
+	if (data.from == "findPathUpdate") setLoadingBar(data.progress, data.routeDesc);
+});
+
+/** @param {number} percentage */
+function setLoadingBar(percentage, statusText="loading...") {
+	/** @type {HTMLDivElement|null} */
+	const loadingBar = document.querySelector(".loading-outer");
+	/** @type {HTMLSpanElement|null|undefined} */
+	const loadingText = loadingBar?.querySelector("span");
+	if (!loadingBar || !loadingText) return;
+
+	loadingBar.style.setProperty("--loading-progress",`${percentage}%`);
+	if (percentage == 100) {
+		loadingBar.classList.add("full");
+		setTimeout(()=>{
+			loadingBar.classList.remove("full");
+			loadingBar.classList.add("empty");
+		},500);
+	}
+	else if (percentage == 0) loadingBar.classList.add("empty");
+	else loadingBar.classList.remove("full","empty");
+	if (loadingText.innerHTML!=statusText) loadingText.innerHTML=statusText;
+}
 
 /** 
  * @typedef {{

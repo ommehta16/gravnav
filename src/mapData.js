@@ -66,8 +66,9 @@ export class Graph {
 	 * @param {number} start id of starting node
 	 * @param {number} end id of ending node
 	 * @param {number} chipotleness scaling factor on the impact of chipotle distance on navigation
+	 * @param {(percentage:number)=>void} updateFunc callback for relevant distance traversed %ages
 	 */
-	findPath(start, end, chipotleness=1) {
+	findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}) {
 		const SPICINESS = 2;
 
 		/** Parent in optimal traversal: node id --> node id
@@ -108,6 +109,7 @@ export class Graph {
 		let found=false;
 		
 		let resultDist = 1e18;
+		let bestPercent=0;
 		while (todo.length() && !found) {
 			const check = todo.pop();
 			if (!check) break;
@@ -151,7 +153,11 @@ export class Graph {
 					resultDist = dist;
 					break;
 				}
-
+				const newPercent = Math.floor(100*dist/(dist+potential*SPICINESS));
+				if (newPercent > bestPercent) { // does 100 updates so no perciptible performance problem
+					bestPercent=newPercent;
+					updateFunc(newPercent);
+				}
 				todo.push({reweighted:(dist+potential*SPICINESS)*(1 + chipotlePoints * chipotleness),distance:dist,to:neighbor,locationMask:mask});
 				visited.add(neighbor);
 			}
@@ -267,7 +273,7 @@ export function distance(pt1, pt2) {
 	const [lat2, lon2] = toLatLng(pt2);
 	
 	const R = 6371e3; // radius of earth, meters
-	const latR1 = lat1 * Math.PI/180; // φ, λ in radians
+	const latR1 = lat1 * Math.PI/180; // in radians ._.
 	const latR2 = lat2 * Math.PI/180;
 	const dLatR = latR2-latR1;
 	const dLonR = (lon2-lon1) * Math.PI/180;
@@ -280,7 +286,7 @@ export function distance(pt1, pt2) {
 	return d;
 }
 
-/** 
+/** Converts a point into a guaranteed LatLng value 
  * @param {{lat:number, lon:number}|number[]|LatLng} point
  * @returns {[number, number]};
  */

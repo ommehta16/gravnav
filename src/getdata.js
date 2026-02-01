@@ -16,7 +16,7 @@ const OSM_API_URL = "https://api.gravnav.ommehta.us";//"http://127.0.0.1:3000";
  * @returns {Promise<Object|null>}
  */
 export async function getData(query) {
-	console.log(OSM_API_URL);
+	// console.log(OSM_API_URL);
 	const res = await fetch(
 		OSM_API_URL,
 		{
@@ -25,11 +25,11 @@ export async function getData(query) {
 			body: "data=" + encodeURIComponent(query)
 		}
 	)
-	console.log("Recieved!");
+	// console.log("Recieved!");
 
 	if (!res.ok) return null;
 	const data = await res.json();
-	console.log("jasoned!");
+	// console.log("jasoned!");
 	
 	return data;
 }
@@ -60,8 +60,8 @@ export async function getDataPersist(query, sendUpdate=null, waitTime=25, maxAtt
 		waitTime *= BACKOFF_FACTOR;
 		return await getDataPersist(query, sendUpdate,waitTime,maxAttempts-1);
 	}
-	console.log(`Got data @ !`);
-	sendUpdate(`Got data @ !`);
+	// console.log(`Got data @ !`);
+	// sendUpdate(`Got data @ !`);
 
 	return res;
 }

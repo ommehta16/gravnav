@@ -130,7 +130,7 @@ async function getMap() {
 
 	postMessage(toReturn);
 
-	console.log("bouta get data");
+	// console.log("bouta get data");
 	/** @type {{elements:OSMWay[]}}} */ // @ts-ignore
 	const data = await getDataPersist(query,undefined,undefined,50);
 	if (!data) return;
@@ -188,13 +188,17 @@ async function findPath(eventPoint) {
 	postMessage({...toReturn,navigation:`<span class="thinking">thinking...</span>`});
 	console.log("searching for path...");
 	let start=Date.now();
-	const normalPath = graph.findPath(chosenPoints[0],chosenPoints[1],0);
+	const normalPath = graph.findPath(chosenPoints[0],chosenPoints[1],0,percentage=>{
+		postMessage({from:"findPathUpdate",progress:percentage*0.2,routeDesc:`${Math.floor(percentage*0.2)}% • normal route`});
+	});
 	toReturn.normalRoute=normalPath.latLngs;
 	console.log(`${(Date.now()-start)/1000} seconds to get normal path`);
 	postMessage({...toReturn,navigation:`<span class="thinking">waiting on Chipotle-d path...</span>`});
 	start=Date.now();
 	
-	const chipotlePath = graph.findPath(chosenPoints[0],chosenPoints[1],chipotleness);
+	const chipotlePath = graph.findPath(chosenPoints[0],chosenPoints[1],chipotleness,percentage=>{
+		postMessage({from:"findPathUpdate",progress:20+percentage*0.8,routeDesc:`${Math.floor(20+percentage*0.8)}% • chipotle route`});
+	});
 	console.log("searching for goofy path")
 	if (!chipotlePath) {
 		postMessage(toReturn);

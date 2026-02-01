@@ -36,13 +36,24 @@
 	<button class="info-button">
 		<i class="fa-solid fa-info"></i>
 	</button>
+	<div class="loading-container">
+		<div class="loading-outer empty">
+			<span class="loading-status-text">Finding Chipotle'd Route</span>
+			<div class="loading-bar-outer">
+				<div class="loading-bar"></div>
+			</div>
+		</div>
+	</div>
 
 	<dialog id="info-dialog">
 		<h1>GravNav</h1> <button class="info-close"><i class="fa-solid fa-x"></i></button>
-		<p>A little project by <a href="https://ommehta16.github.io/">Om</a>!</p>
-
+		<p>Uses A* graph traversal, the <a href="https://wiki.openstreetmap.org/wiki/Overpass_API" target="_blank">OpenStreetMap
+				Overpass API</a>, express.js, hopes, dreams, and an INCREDIBLE amount of duct tape to show you driving routes
+			that get "subtly" attracted to nearby Chipotles.</p>
+		
 		<h3>Attributions</h3>
 		Map rendering: <a href="https://leafletjs.com" target="_blank">Leaflet</a><br />
-		Map data &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>
+		Map data &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> </br>
+		html, db, and everything in between written by <a href="https://ommehta16.github.io/" target="_blank">Om</a>!
 	</dialog>
 </body>
