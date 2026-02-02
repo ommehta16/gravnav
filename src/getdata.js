@@ -9,7 +9,6 @@
 
 
 const OSM_API_URL = "https://api.gravnav.ommehta.us";//"http://127.0.0.1:3000";
-//"https://104.236.249.234:3000";
 
 /**
  * @param {string} query
