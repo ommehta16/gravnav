@@ -107,11 +107,15 @@ mapDataWorker.addEventListener("message",e=>{
 		routeLine.setLatLngs(data.chosenPoints);
 		routeLineB.setLatLngs(data.chosenPoints);
 		pushUpdate("");
+		routeLineB.setStyle({dashArray:`${5*(1<<10)/Math.pow(2,map._zoom)}`,opacity:0.5,weight:2});
+		routeLineB.setStyle({dashArray:`${5*(1<<10)/Math.pow(2,map._zoom)}`,opacity:0.5,weight:2});
 
 		if (!data.normalRoute) return;
 		routeLine.setLatLngs(data.normalRoute);
+		routeLine.setStyle({dashArray:``,opacity:1, weight:5});
 		if (!data.chipotleRoute) return;
 		routeLineB.setLatLngs(data.chipotleRoute);
+		routeLineB.setStyle({dashArray:``,opacity:1, weight:5});
 		navigation=data.navigation;
 		pushUpdate("");
 		setLoadingBar(100, "done!");
