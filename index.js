@@ -7,7 +7,7 @@ import "./src/format.js";
 window.L = L;
 
 // @ts-ignore
-document.querySelector("#big-title").innerHTML = `gravnav`;
+document.querySelector("#big-title").innerHTML = `GravNav`;
 
 /** @type {[number,number][]} */
 const mapCenter = [[40.5, -75], [41.5, -74]];
@@ -62,10 +62,11 @@ mapDataWorker.addEventListener("message",e=>{
 	 * 	circleLocs: [number,number][]|null
 	 * }|{
 	 * 	from: "findPath",
-	 * 	chosenPoints: [number|null,number|null]|null,
+	 * 	chosenPoints: [LatLng,LatLng]|null,
 	 * 	chipotleRoute?: (LatLng|[number,number])[]|null,
 	 * 	normalRoute?: (LatLng|[number,number])[]|null,
-	 * 	navigation: string
+	 * 	navigation: string,
+	 * 	error:string
 	 * }|{
 	 * 	from: "findPathUpdate",
 	 * 	routeDesc: string,
@@ -77,7 +78,9 @@ mapDataWorker.addEventListener("message",e=>{
 	
 	if (data.from=="getMap") {
 		if (!data.bounds || !data.clampWithin ) {
+			// console.log("can confirm.");
 			boundsRect.setBounds([[0,0],[0,0]]);
+			document.body.attributes.getNamedItem("data-loading") && document.body.attributes.removeNamedItem("data-loading");
 			return;
 		}
 		boundsRect.setBounds(data.bounds);
@@ -89,19 +92,36 @@ mapDataWorker.addEventListener("message",e=>{
 
 		// @ts-ignore
 		L.rectangle(data.bounds, {fillColor: "#8f8", weight: 1, color: "transparent",interactive:false}).addTo(map);
-		document.body.attributes.getNamedItem("data-loading") && document.body.attributes.removeNamedItem("data-loading");
 		boundsRect.setBounds([[0,0],[1,1]]);
 		return;
 	}
 	if (data.from == "findPath") {
+		// console.log(data);
 		if (!data.chosenPoints) return;
 		chosenPoints = data.chosenPoints;
 		drawChosenPoints();
+
+		if (data.error) {
+			console.log("Error recieved");
+			routeLine.setLatLngs([[0,0],[0,0]]);
+			routeLineB.setLatLngs([[0,0],[0,0]]);
+
+			chosenPoints=[null,null];
+			drawChosenPoints();
+
+			setLoadingBar(100,"No route available",true);
+			navigation="No route available";
+			pushUpdate("");
+			return;
+		}
 		
 		navigation=data.navigation;
 
 		if (!data.chosenPoints[1]) {
 			setLoadingBar(0);
+			document.querySelector("#output")?.removeAttribute("has-content");
+			routeLine.setLatLngs([[0,0],[0,0]]);
+			routeLineB.setLatLngs([[0,0],[0,0]]);
 			return;
 		}
 		routeLine.setLatLngs(data.chosenPoints);
@@ -117,27 +137,30 @@ mapDataWorker.addEventListener("message",e=>{
 		routeLineB.setLatLngs(data.chipotleRoute);
 		routeLineB.setStyle({dashArray:``,opacity:1, weight:5});
 		navigation=data.navigation;
+		document.querySelector("#output")?.setAttribute("has-content","");
 		pushUpdate("");
 		setLoadingBar(100, "done!");
 	}
 	if (data.from == "findPathUpdate") setLoadingBar(data.progress, data.routeDesc);
 });
 
-/** @param {number} percentage */
-function setLoadingBar(percentage, statusText="loading...") {
+/** @param {number} percentage @param {boolean|null} error */
+function setLoadingBar(percentage, statusText="loading...", error=null) {
 	/** @type {HTMLDivElement|null} */
 	const loadingBar = document.querySelector(".loading-outer");
 	/** @type {HTMLSpanElement|null|undefined} */
 	const loadingText = loadingBar?.querySelector("span");
 	if (!loadingBar || !loadingText) return;
-
+	loadingBar.removeAttribute("error");
+	if (error) loadingBar.setAttribute("error","");
 	loadingBar.style.setProperty("--loading-progress",`${percentage}%`);
 	if (percentage == 100) {
 		loadingBar.classList.add("full");
 		setTimeout(()=>{
 			loadingBar.classList.remove("full");
 			loadingBar.classList.add("empty");
-		},500);
+			loadingBar.removeAttribute("error");
+		},error ? 5_000:500);
 	}
 	else if (percentage == 0) loadingBar.classList.add("empty");
 	else loadingBar.classList.remove("full","empty");
@@ -149,7 +172,7 @@ function setLoadingBar(percentage, statusText="loading...") {
  * 	lat:number,
  * 	lng:number,
  * 	alt?:number
- * }} LatLng;
+ * }|[number|null,number|null]|null} LatLng;
  * 
  * @typedef {{
  * 	latlng: LatLng,
@@ -158,7 +181,7 @@ function setLoadingBar(percentage, statusText="loading...") {
  * }} LeafletMouseEvent;
 */
 
-/** @type {[null|number,null|number]} */
+/** @type {[LatLng,LatLng]} */
 let chosenPoints = [null, null];
 
 // @ts-ignore
@@ -166,18 +189,35 @@ let routeLine = L.polyline([[0,0],[1,1]],{color:"#0f0",weight:5, opacity:1,inter
 // @ts-ignore
 let routeLineB = L.polyline([[0,0],[1,1]],{color:"#f0f",weight:5, opacity:1,interactive:false}).addTo(map);
 
-// @ts-ignore
-let chosePointCircles =[L.circle( [0,0], { color: 'red', fillColor: "#f03", fillOpacity: 0.5, radius: 20, interactive: false } ).addTo(map), // @ts-ignore				
-	L.circle( [0,0], { color: 'blue', fillColor: "#30f", fillOpacity: 0.5, radius: 20, interactive: false } ).addTo(map)];
+let chosePointCircles =[ //@ts-ignore
+	L.circle( [0,0], { color: 'blue', fillColor: "rgb(0, 0, 145)", fillOpacity: 1, radius: 30, interactive: false,weight:5 } ).addTo(map), // @ts-ignore				
+	L.circle( [0,0], { color: 'red', fillColor: "rgb(134, 0, 0)", fillOpacity: 1, radius: 30, interactive: false,weight:5 } ).addTo(map)
+];
 
 map.on("click",/** @param {LeafletMouseEvent} e */ e=> {
 	mapDataWorker.postMessage({action: "findPath", eventPoint:e.latlng});
-	pushUpdate("thinking...");
+	// pushUpdate("thinking...");
 });
 
 function drawChosenPoints() {
-	if (chosenPoints[0]) chosePointCircles[0].setLatLng(chosenPoints[0]);
-	if (chosenPoints[1]) chosePointCircles[1].setLatLng(chosenPoints[1]);
+	const inputs = document.querySelectorAll(".input-center button.point-selector");
+	if (!inputs || inputs.length < 2) return;
+
+	if (!chosenPoints[0]) chosePointCircles[0].setLatLng([0,0]);
+	if (!chosenPoints[1]) chosePointCircles[1].setLatLng([0,0]);
+
+	if (chosenPoints[0]) {
+		chosePointCircles[0].setLatLng(chosenPoints[0]);
+		let a = chosenPoints[0];
+		inputs[0].innerHTML = "lat" in a ? `${a.lat.toFixed(2)} ${a.lng.toFixed(2)}` : `${a[0]?.toFixed(2)} ${a[1]?.toFixed(2)}`;
+	}
+	else inputs[0].innerHTML="Select a point";
+	if (chosenPoints[1]) {
+		chosePointCircles[1].setLatLng(chosenPoints[1]);
+		let a = chosenPoints[1];
+		inputs[1].innerHTML = "lat" in a ? `${a.lat.toFixed(2)} ${a.lng.toFixed(2)}` : `${a[0]?.toFixed(2)} ${a[1]?.toFixed(2)}`;
+	}
+	else inputs[1].innerHTML="Select a point";
 }
 
 /** @type {HTMLDialogElement} */ // @ts-ignore

@@ -119,7 +119,10 @@ async function getMap() {
 		circleLocs: null,
 	};
 	
-	if (!boundsRemaining.length) return toReturn;
+	if (!boundsRemaining.length) {
+		postMessage(toReturn);
+		return;
+	}
 
 	// @ts-ignore
 	bounds = boundsRemaining.pop();
@@ -151,7 +154,8 @@ async function findPath(eventPoint) {
 	 * 	chosenPoints: [LatLng|null,LatLng|null]|null,
 	 * 	chipotleRoute: LatLng[]|null,
 	 * 	normalRoute: LatLng[]|null,
-	 * 	navigation: string
+	 * 	navigation: string,
+	 * 	error:string
 	 * }}
 	 */
 	const toReturn = {
@@ -159,7 +163,8 @@ async function findPath(eventPoint) {
 		chosenPoints: null,
 		chipotleRoute: null,
 		normalRoute: null,
-		navigation: ""
+		navigation: "",
+		error:""
 	}
 
 	const clickPoint = toLatLng(eventPoint);
@@ -196,6 +201,13 @@ async function findPath(eventPoint) {
 	postMessage({...toReturn,navigation:`<span class="thinking">waiting on Chipotle-d path...</span>`});
 	start=Date.now();
 	
+	if (normalPath.error) {
+		toReturn.error=normalPath.error;
+		chosenPoints=[null,null];
+		postMessage(toReturn);
+		return;
+	}
+
 	const chipotlePath = graph.findPath(chosenPoints[0],chosenPoints[1],chipotleness,percentage=>{
 		postMessage({from:"findPathUpdate",progress:20+percentage*0.8,routeDesc:`${Math.floor(20+percentage*0.8)}% • chipotle route`});
 	});
@@ -211,7 +223,7 @@ async function findPath(eventPoint) {
 	}
 	console.log("got paths!");
 	toReturn.chipotleRoute=chipotlePath.latLngs;
-
+	
 	toReturn.navigation=chipotlePath.navigation+"<br/>"+normalPath.navigation;
 	postMessage(toReturn);
 }

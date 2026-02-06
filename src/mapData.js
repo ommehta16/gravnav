@@ -67,9 +67,12 @@ export class Graph {
 	 * @param {number} end id of ending node
 	 * @param {number} chipotleness scaling factor on the impact of chipotle distance on navigation
 	 * @param {(percentage:number)=>void} updateFunc callback for relevant distance traversed %ages
+	 * @param {number} timeout Maximum amount of time to process before assuming there's a problem
 	 */
-	findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}) {
+	findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, timeout=15) {
 		const SPICINESS = 2;
+		let timeRemaining=true;
+		const timer = setTimeout(()=>{timeRemaining=false;console.log("times up!")},timeout*1000);
 
 		/** Parent in optimal traversal: node id --> node id
 		 * @type {Map<number, number>} 
@@ -110,9 +113,17 @@ export class Graph {
 		
 		let resultDist = 1e18;
 		let bestPercent=0;
-		while (todo.length() && !found) {
+		while (!found) {
 			const check = todo.pop();
-			if (!check) break;
+			if (!timeRemaining || !check) {
+				// updateFunc(100);
+				console.log(`timeRemaining:${timeRemaining}, check:${check}`)
+				return {
+					latLngs:null,
+					navigation:"Could not find route",
+					error:"noroute"
+				}
+			}
 			const curr = check.to;
 			const startDistance = check.distance;
 
@@ -181,7 +192,7 @@ export class Graph {
 			
 			curr = bestFrom.get(curr) ?? NaN;
 		}
-
+		clearTimeout(timer);
 		return {
 			latLngs: bruh,
 			navigation: `${Math.round(resultDist*100)/100}hr drive • ${Math.round(dist * 0.000621371*100)/100}mi<br/>`

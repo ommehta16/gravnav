@@ -19,25 +19,55 @@ body {
 	height: 100svh;
 }
 
-#overlay {
+#top-left-info {
 	position: absolute;
 	top:1rem;
 	left:1rem;
 	width:fit-content;
 	right:1rem;
-	/* padding:1rem; */
 	z-index: 999;
+
+	display: flex;
+	flex-direction: column;
+	gap:0.5rem;
+
+	pointer-events: none;
+}
+
+
+.overlay {
+	/* padding:1rem; */
 	border-radius: calc(1rem + var(--spinny-border-width));
-
+	width:fit-content;
 	border: 2px solid transparent;
-
+	
 	backdrop-filter: blur(2rem);
-	background: var(--bg-translucent);
-
+	background: #fefefe; /*var(--bg-translucent);*/
+	box-shadow: 
+	0 0 1rem 1rem rgba(0,0,0,0.015) inset,
+	0 0.25rem 1rem 1rem rgba(0,0,0,0.05)
+	;
+	pointer-events: all;
 	transition: backdrop-filter 0.2s, border 0.2s;
 }
 
-body:not([data-loading]) #overlay {
+@media screen and (max-width:500px) {
+	#top-left-info {
+		/* right:1rem; */
+		width:unset;
+	}
+	
+	.overlay {
+		width:100%;
+		box-sizing: border-box;
+	}
+
+	#top-left-info .overlay-interior button.point-selector {
+		width: 100%;
+	}
+}
+
+body:not([data-loading]) .overlay {
 	border: 2px solid #aaa;
 	top: 1rem;
 	right:1rem;
@@ -50,16 +80,20 @@ body:not([data-loading]) #overlay {
 	background:#fefefe;
 
 	box-shadow: 
-		0 0 1rem 1rem rgba(0,0,0,0.025) inset,
+		0 0 1rem 1rem rgba(0,0,0,0.015) inset,
 		0 0.25rem 1rem 1rem rgba(0,0,0,0.05)
 	;
 	transition: background 2s 1s, box-shadow 2s 1s;
 }
 
-body:not([data-loading]) .overlay-interior {
+/* body:not([data-loading]) .overlay-interior {
 	background:transparent;
 	box-shadow: 0 0 1rem 1rem rgba(0,0,0,0.05) inset,
 				0 0.25rem 1rem 1rem rgba(0,0,0,0.05);
+} */
+
+body:not([data-loading]) .overlay {
+	background:#fefefe;
 }
 
 @property --spinny-border-width {
@@ -230,6 +264,7 @@ dialog a:hover {
 }
 
 .loading-container {
+	pointer-events: none;
 	position:absolute;
 	bottom: 1rem;
 	inset-inline:0;
@@ -241,9 +276,12 @@ dialog a:hover {
 	justify-content: center;
 
 	transition:inset 0.2s cubic-bezier(0.25, 0.1, 0.32, 1.32);
+
+	justify-content: end;
 }
 
 .loading-outer {
+	pointer-events: all;
 	--loading-progress:0%;
 	background:var(--bg-translucent);
 	width:10rem;
@@ -254,6 +292,10 @@ dialog a:hover {
 
 	display: flex;
 	flex-direction: column;
+
+	position:relative;
+	right:3.5rem;
+	border: 2px solid #aaa;	
 }
 
 .loading-outer span {
@@ -281,4 +323,117 @@ dialog a:hover {
 
 .loading-container:has(.empty) {
 	bottom:-4rem;
+}
+
+/* .loading-container:has(.loading-outer[error]) {
+	transition-delay: 10s;
+} */
+
+.loading-outer[error] .loading-bar {
+	background: red;
+}
+
+.input {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	margin-top:1rem;
+}
+
+.input-icons i {
+	font-size:1.5rem;
+	padding:0.5rem;
+	display: block;
+}
+
+.input-icons i:first-child {
+	position: relative;
+	top:-.1rem;
+	color: rgb(0, 0, 145);
+}
+
+.input-icons i:last-child {
+	position: relative;
+	top:.1rem;
+	left:.15rem;
+	color: rgb(134, 0, 0);
+}
+
+.input-icons i.fa-ellipsis {
+	/* height: 1rem; */
+	font-size: 1rem;
+	padding:0;
+	position: relative;
+	transform: rotate(90deg);
+	top:10%;
+	/* left:25%; */
+}
+
+.input-center {
+	display: flex;
+	flex-direction: column;
+	gap:1rem;
+	flex-wrap: nowrap;
+	width: 100%;
+}
+
+.input-center button.point-selector {
+	display: block;
+	background: var(--bg-translucent);
+	font-size: 1rem;
+	padding:0.5rem;
+	/* border:1px solid black; */
+	border: 2px solid #aaa;
+	
+	/* height:2.5rem; */
+	box-sizing: border-box;
+	
+	border-radius:0.5rem;
+	width:100%;
+	width: calc(1rem + 14ch);
+
+	transition:background .2s, transform 0.2s;
+	transform: none;
+
+	box-shadow: 
+		0 0 1rem 1rem rgba(0,0,0,0.025) inset,
+		0 0.25rem 1rem 1rem rgba(0,0,0,0.025)
+	;
+}
+
+.input-center button.point-selector[data-unselected] {
+	color: #666;
+	font-style: italic;
+}
+
+.input-center button.point-selector:hover {
+	cursor: pointer;
+	background: rgba(200,200,200,0.6)
+}
+
+.input-center button.point-selector:active {
+	transform:scale(0.95);
+}
+
+.directions {
+	padding:1rem;
+	border: 2px solid #aaa;
+}
+
+.directions {
+	left: calc( -100% - 1rem);
+	position: relative;
+	transition: left 0.5s;
+}
+
+.directions:has(#output[has-content]) {
+	left:0;
+}
+
+.leaflet-grab {
+	cursor: crosshair;
+}
+
+body:not(.leaflet-dragging) .leaflet-grab:active {
+	cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><text y="12" font-size="10" fill="black">●</text></svg>') 2 2, auto;
 }
