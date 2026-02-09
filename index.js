@@ -15,7 +15,7 @@ const mapCenter = [[40.5, -75], [41.5, -74]];
 // [[25,-100],[50,-60]];
 
 /** Sync this between here and ./src/worker.js !! */
-const clampWithin = [[40.5, -75], [41.5, -73]];
+const clampWithin = [[40.5, -75], [41.5, -72.5]];
 
 // @ts-ignore
 const mapDataWorker = window.mapDataWorker = new Worker("src/worker.js", {type:"module"});
@@ -88,7 +88,7 @@ mapDataWorker.addEventListener("message",e=>{
 
 		circles.forEach(el=>el.remove());
 		// @ts-ignore
-		data.circleLocs.forEach(loc => circles.push(L.circle(loc).addTo(map)));
+		data.circleLocs.forEach(loc => circles.push(L.circle(loc, {interactive:false}).addTo(map)));
 
 		// @ts-ignore
 		L.rectangle(data.bounds, {fillColor: "#8f8", weight: 1, color: "transparent",interactive:false}).addTo(map);
@@ -124,6 +124,7 @@ mapDataWorker.addEventListener("message",e=>{
 			routeLineB.setLatLngs([[0,0],[0,0]]);
 			return;
 		}
+		document.querySelector("#output")?.removeAttribute("has-content");
 		routeLine.setLatLngs(data.chosenPoints);
 		routeLineB.setLatLngs(data.chosenPoints);
 		pushUpdate("");
@@ -194,13 +195,21 @@ let chosePointCircles =[ //@ts-ignore
 	L.circle( [0,0], { color: 'red', fillColor: "rgb(134, 0, 0)", fillOpacity: 1, radius: 30, interactive: false,weight:5 } ).addTo(map)
 ];
 
+/** @type {number} */
+let lastFocused=0;
+
 map.on("click",/** @param {LeafletMouseEvent} e */ e=> {
-	mapDataWorker.postMessage({action: "findPath", eventPoint:e.latlng});
+	// send **coords** and 
+	mapDataWorker.postMessage({action: "findPath", eventPoint:e.latlng,eventPointIndex:lastFocused ?? undefined});
+
+	lastFocused = (lastFocused+1) % 2;
+	document.body.setAttribute("last-focused",lastFocused.toString());
 	// pushUpdate("thinking...");
 });
 
 function drawChosenPoints() {
-	const inputs = document.querySelectorAll(".input-center button.point-selector");
+	/** @type {NodeListOf<HTMLInputElement>} */
+	const inputs = document.querySelectorAll(".input-center div.point-selector input");
 	if (!inputs || inputs.length < 2) return;
 
 	if (!chosenPoints[0]) chosePointCircles[0].setLatLng([0,0]);
@@ -209,15 +218,15 @@ function drawChosenPoints() {
 	if (chosenPoints[0]) {
 		chosePointCircles[0].setLatLng(chosenPoints[0]);
 		let a = chosenPoints[0];
-		inputs[0].innerHTML = "lat" in a ? `${a.lat.toFixed(2)} ${a.lng.toFixed(2)}` : `${a[0]?.toFixed(2)} ${a[1]?.toFixed(2)}`;
+		inputs[0].value = "lat" in a ? `${a.lat.toFixed(2)} ${a.lng.toFixed(2)}` : `${a[0]?.toFixed(2)} ${a[1]?.toFixed(2)}`;
 	}
-	else inputs[0].innerHTML="Select a point";
+	else inputs[0].value="";
 	if (chosenPoints[1]) {
 		chosePointCircles[1].setLatLng(chosenPoints[1]);
 		let a = chosenPoints[1];
-		inputs[1].innerHTML = "lat" in a ? `${a.lat.toFixed(2)} ${a.lng.toFixed(2)}` : `${a[0]?.toFixed(2)} ${a[1]?.toFixed(2)}`;
+		inputs[1].value = "lat" in a ? `${a.lat.toFixed(2)} ${a.lng.toFixed(2)}` : `${a[0]?.toFixed(2)} ${a[1]?.toFixed(2)}`;
 	}
-	else inputs[1].innerHTML="Select a point";
+	else inputs[1].value="";
 }
 
 /** @type {HTMLDialogElement} */ // @ts-ignore
@@ -225,3 +234,40 @@ const infoDialog = document.querySelector("dialog#info-dialog");
 
 document.querySelector("button.info-button")?.addEventListener("click",() => {infoDialog.showModal()});
 document.querySelector("button.info-close")?.addEventListener("click",() => {infoDialog.close()});
+
+/** @param {HTMLInputElement} inputEl */
+function processInput(inputEl, idx=0) {
+	
+	const newVal = inputEl.value;
+	
+	/** @type {(number|string)[]} */
+	let coords = [];
+
+	coords = newVal.split(/[,\s]+/).map(el=>(+el));
+	console.log(coords);
+	if (coords.length == 2 && Number.isFinite(coords[0]) && Number.isFinite(coords[1])) {
+		mapDataWorker.postMessage({action: "findPath", eventPoint:coords, eventPointIndex:idx});
+		return;
+	}
+
+	return;
+}
+
+// @ts-ignore
+document.querySelectorAll(".input-center div.point-selector").forEach(/** @param {HTMLDivElement} el */ (el,idx)=>{
+	const inp = el.querySelector("input");
+	if (!inp) return;
+	inp.addEventListener("keyup",e=>{
+		console.log(e);
+		if (e.key!="Enter") return;
+		processInput(inp,idx);
+	});
+	el.querySelector("button")?.addEventListener("click",e=>{
+		console.log(e);
+		processInput(inp,idx);
+	});
+	inp.addEventListener("focus",e=>{
+		lastFocused=idx;
+		document.body.setAttribute("last-focused",lastFocused.toString());
+	});
+});

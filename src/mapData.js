@@ -70,7 +70,7 @@ export class Graph {
 	 * @param {number} timeout Maximum amount of time to process before assuming there's a problem
 	 */
 	findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, timeout=15) {
-		const SPICINESS = 2;
+		const SPICINESS =  1+chipotleness; // speed up by chipotleness
 		let timeRemaining=true;
 		const timer = setTimeout(()=>{timeRemaining=false;console.log("times up!")},timeout*1000);
 
@@ -201,21 +201,35 @@ export class Graph {
 
 
 	/** Parses speed text from OSM. See [OSM's key:maxspeed](https://wiki.openstreetmap.org/wiki/Key:maxspeed) for more info
-	 * @param {string|number} spdText the text/number from the `maxspeed` tag on an OSM highway/railway/waterway
+	 * @param {OSMWay} rd the text/number from the `maxspeed` tag on an OSM highway/railway/waterway
 	 */
-	static parseSpeed(spdText) {
+	static parseSpeed(rd) {
 		let speed=null;
 		
-		if (Number.isFinite(+spdText)) speed=(+spdText);
-		else {
+		if ("maxspeed" in rd.tags && Number.isFinite(+rd.tags.maxspeed)) {
+			speed= (+rd.tags.maxspeed);
+			return speed;
+		}
+		if ("maxspeed" in rd.tags) {
 			try {
-				const [spd,unit] = spdText.toString().split(" ");
+				const [spd,unit] = rd.toString().split(" ");
 				// see https://wiki.openstreetmap.org/wiki/Key:maxspeed#Values
 				if (unit == "mph") speed = (+spd) * 1.609344;
 				if (unit == "knots") speed = (+spd) * 1.852;
+				if (speed) return speed;
 			}
 			catch { }
 		}
+		
+		if (!("highway" in rd.tags)) throw new Error("how?");
+		if (rd.tags.highway == "motorway") speed=100;
+		else if (rd.tags.highway == "trunk") speed=90;
+		else if (rd.tags.highway == "primary") speed=80;
+		else if (rd.tags.highway == "secondary") speed=70;
+		else if (rd.tags.highway == "tertiary") speed=60;
+		else if (rd.tags.highway == "residential") speed=40;
+		else if (rd.tags.highway in ["motorway_link", "trunk_link", "primary_link", "secondary_link", "tertiary_link"]) speed=80;
+		else speed=45;
 		return speed;
 	}
 
@@ -239,7 +253,7 @@ export class Graph {
 			/** Speed in **km/h**
 			 * @type {number} 
 			 */
-			const speed = Graph.parseSpeed(rd.tags.maxspeed ?? 50) ?? 50;
+			const speed = Graph.parseSpeed(rd);
 			let direction=0;
 			if ("oneway" in rd.tags) {
 				if (rd.tags.oneway == "-1") direction=-1;

@@ -23,13 +23,13 @@
 	<script src="https://kit.fontawesome.com/73bd27aadc.js" crossorigin="anonymous"></script>
 </head>
 
-<body data-loading="1">
+<body data-loading="1" last-focused="0">
 	<div id="top-left-info">
 		<div class="overlay">
 			<div class="overlay-interior">
 				<div class="loading-spinny-container"></div>
 				<!-- ^^ make this an overlay and fullscreen the map! -->
-				<h1 id="big-title">_______ map of the United States</h1>
+				<h1 id="big-title">Loading...</h1>
 				<div class="input">
 					<div class="input-icons">
 						<i class="fa-solid fa-location-dot"></i>
@@ -38,14 +38,16 @@
 
 					</div>
 					<div class="input-center">
-						<button class="point-selector" data-unselected>Select a Point</button>
-						<button class="point-selector" data-unselected>Select a Point</button>
+						<div class="point-selector"><input data-unselected placeholder="Select a point..."></input><button class="submit-point"><i class="fa-solid fa-check"></i></button></div>
+						<div class="point-selector"><input data-unselected placeholder="Select a point..."></input><button class="submit-point"><i class="fa-solid fa-check"></i></button></div>
 					</div>
 				</div>
 			</div>
 		</div>
 		<div class="overlay directions">
 			<div id="output"></div>
+			<!-- <button class="route-control clear"><i class="fa-solid fa-trash"></i></button>
+			<button class="route-control hide"><i class="fa-solid fa-chevron-left"></i></button> -->
 		</div>
 	</div>
 	<div id="map"></div>

@@ -62,14 +62,13 @@ body {
 		box-sizing: border-box;
 	}
 
-	#top-left-info .overlay-interior button.point-selector {
+	#top-left-info .overlay-interior div.point-selector {
 		width: 100%;
 	}
 }
 
 body:not([data-loading]) .overlay {
 	border: 2px solid #aaa;
-	top: 1rem;
 	right:1rem;
 }
 
@@ -166,7 +165,7 @@ h1 {
 
 	backdrop-filter: blur(2rem);
 	background: rgba(255, 255, 255, 0.6);
-	border: 2px solid #aaa;	
+	border: 2px solid #aaa;
 	border-radius:0.5rem;
 
 	font-size: 1rem;
@@ -260,7 +259,42 @@ dialog a:hover {
 }
 
 #output {
-	font-family: 'Courier New', Courier, monospace;
+	/* font-family: 'Courier New', Courier, monospace; */
+}
+
+#output h3 {
+	display: flex;
+	flex-direction: row;
+	align-content: center;
+	margin:0.5rem;
+}
+
+#output {
+	display: flex;
+	flex-direction: column;
+	gap:1rem;
+}
+
+#output div:last-child {
+	/* border-top: 1px solid black; */
+}
+
+#output h3::before {
+	content:"";
+	width:1em;
+	height: 1em;
+	margin-right:1ch;
+	display: inline-block;
+	background:green;
+	border: 1px solid black;
+	box-sizing: border-box;
+}
+
+#output div:first-child h3::before {
+	background: #0f0;
+}
+#output div:last-child h3::before {
+	background: #f0f;
 }
 
 .loading-container {
@@ -377,11 +411,11 @@ dialog a:hover {
 	width: 100%;
 }
 
-.input-center button.point-selector {
-	display: block;
+.input-center div.point-selector {
+	display: flex;
 	background: var(--bg-translucent);
 	font-size: 1rem;
-	padding:0.5rem;
+	/* padding:0.5rem; */
 	/* border:1px solid black; */
 	border: 2px solid #aaa;
 	
@@ -392,28 +426,102 @@ dialog a:hover {
 	width:100%;
 	width: calc(1rem + 14ch);
 
-	transition:background .2s, transform 0.2s;
+	transition:background .2s, transform 0.2s, border 0.2s;
 	transform: none;
 
 	box-shadow: 
 		0 0 1rem 1rem rgba(0,0,0,0.025) inset,
 		0 0.25rem 1rem 1rem rgba(0,0,0,0.025)
 	;
+
+
+	/* overflow: hidden; */
 }
 
-.input-center button.point-selector[data-unselected] {
+div.point-selector input {
+	border: none;
+	/* background: red; */
+	height: 100%;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0.5rem;
+	font-size: 1rem;
+
+	border-bottom-left-radius: calc(0.5rem - 2px);
+	border-top-left-radius: calc(0.5rem - 2px);
+	border-top-right-radius: calc(0.5rem - 2px);
+	border-bottom-right-radius: calc(0.5rem - 2px);
+}
+
+.input-center div.point-selector[data-unselected] {
 	color: #666;
 	font-style: italic;
 }
 
-.input-center button.point-selector:hover {
-	cursor: pointer;
+.input-center div.point-selector:hover {
+	/* cursor: pointer; */
 	background: rgba(200,200,200,0.6)
 }
 
-.input-center button.point-selector:active {
+.input-center div.point-selector:has(input:active) {
 	transform:scale(0.95);
 }
+
+div.point-selector input:focus,
+div.point-selector:has(button:active) input {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+div.point-selector:has(input:hover) {
+	border-color: #777;
+}
+
+div.point-selector input:focus-visible {
+	outline: none; /*2px solid var(--accent);*/
+}
+
+div.point-selector:has(input:focus-visible),
+body[last-focused="0"] div.point-selector:first-child,
+body[last-focused="1"] div.point-selector:last-child {
+	border-color:var(--accent);
+}
+
+div.point-selector button.submit-point {
+	/* opacity: 0; */
+	border:none;
+	background:var(--accent);
+	width:2.5rem;
+	padding: 0;
+	max-width:0;
+	
+	border-top-right-radius: calc(0.5rem - 2px);
+	border-bottom-right-radius: calc(0.5rem - 2px);
+
+	position: relative;
+	top:0;
+	border:0px solid transparent;
+	transform: scale(1);
+	transition: transform 0.2s, border 0.2s, max-width 0.2s;
+	overflow:hidden;
+	&:hover {
+		cursor: pointer;
+		border:1px solid white;
+		
+	}
+}
+
+div.point-selector:has(input:focus) button.submit-point,
+div.point-selector button.submit-point:active {
+	max-width:2.5rem;
+	padding:0.25rem;
+}
+
+div.point-selector button.submit-point:active {
+	transform: scale(0.95);
+	background:oklch(from var(--accent) calc(l + 0.1) c h);
+}
+
 
 .directions {
 	padding:1rem;
@@ -436,4 +544,36 @@ dialog a:hover {
 
 body:not(.leaflet-dragging) .leaflet-grab:active {
 	cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><text y="12" font-size="10" fill="black">●</text></svg>') 2 2, auto;
+}
+
+button.route-control {
+	position: absolute;
+	right: 1rem;
+	height: 1.5rem;
+	width: 1.5rem;
+	border:none;
+	border-radius:0.25rem;
+	background: rgba(255, 255, 255, 0.6);
+	outline: 2px solid #aaa;
+	box-sizing: border-box;
+
+	transition: outline 0.2s, background 0.2s, transform 0.2s;
+
+	&:hover {
+		cursor: pointer;
+		background: rgba(200,200,200,0.6);
+		outline: 2px solid #ccc;
+	}
+
+	&:active {
+		transform:scale(0.95);
+	}
+}
+
+button.route-control.hide {
+	top:1rem;
+}
+
+button.route-control.clear {
+	bottom:1rem;
 }

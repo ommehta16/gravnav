@@ -47,13 +47,13 @@ export async function getDataPersist(query, sendUpdate=null, waitTime=25, maxAtt
 
 	sendUpdate = sendUpdate || ( (a)=>null );
 	
-	sendUpdate("Getting data...");
-	console.log("Getting data...");
+	// sendUpdate("Getting data...");
+	// console.log("Getting data...");
 	const res = await getData(query);
-	sendUpdate("Got data!")
+	// sendUpdate("Got data!")
 	if (!res) {
 		if (maxAttempts <= 1) return null;
-		sendUpdate(`Getting data...<br />Waiting ${waitTime}ms before trying again`);
+		// sendUpdate(`Getting data...<br />Waiting ${waitTime}ms before trying again`);
 		
 		await new Promise((resolve, reject) => { setTimeout(resolve,waitTime); });
 		waitTime *= BACKOFF_FACTOR;

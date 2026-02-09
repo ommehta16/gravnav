@@ -16,7 +16,7 @@ const graph = new Graph();
 const mapCenter = [[40.5, -75], [41, -74.75]];
 /** @type {[number,number][]} */
 let bounds = mapCenter.map(a=>[...a]);
-const clampWithin = [[40.5, -75], [41.5, -73]];
+const clampWithin = [[40.5, -75], [41.5, -72.5]];
 
 /** @type {[null|number,null|number]} */
 let chosenPoints = [null, null];
@@ -141,13 +141,13 @@ async function getMap() {
 	toReturn.circleLocs = Array.from(graph.locations.values());
 	
 	postMessage(toReturn);
-	console.log(`Now has ${graph.nodes.size} nodes, ${graph.locations.size} points`);
+	// console.log(`Now has ${graph.nodes.size} nodes, ${graph.locations.size} points`);
 	setTimeout(getMap,0);
 }
 
 let chipotleness=1;
-/** @param {[number,number]} eventPoint */ 
-async function findPath(eventPoint) {
+/** @param {[number,number]} eventPoint @param {number} eventPointIndex */ 
+async function findPath(eventPoint,eventPointIndex=-1) {
 	/** 
 	 * @type {{
 	 * 	from: "findPath",
@@ -179,9 +179,12 @@ async function findPath(eventPoint) {
 		}
 	});
 	
-	if (!chosenPoints[0]) chosenPoints[0] = bestID;
-	else if (!chosenPoints[1]) chosenPoints[1] = bestID;
-	else chosenPoints = [bestID,null];
+	if (eventPointIndex!=-1) chosenPoints[eventPointIndex] = bestID;
+	else {
+		if (!chosenPoints[0]) chosenPoints[0] = bestID;
+		else if (!chosenPoints[1]) chosenPoints[1] = bestID;
+		else chosenPoints = [bestID,null];
+	}
 
 	toReturn.chosenPoints=[chosenPoints[0] ? (graph.nodes.get(chosenPoints[0])?.coords ?? null) : null, 
 						   chosenPoints[1] ? (graph.nodes.get(chosenPoints[1])?.coords ?? null) : null];
@@ -224,7 +227,7 @@ async function findPath(eventPoint) {
 	console.log("got paths!");
 	toReturn.chipotleRoute=chipotlePath.latLngs;
 	
-	toReturn.navigation=chipotlePath.navigation+"<br/>"+normalPath.navigation;
+	toReturn.navigation=`<div><h3>Regular Route</h3>${normalPath.navigation}</div><div><h3>"Chipotle-d" Route</h3>${chipotlePath.navigation}</div>`;
 	postMessage(toReturn);
 }
 
@@ -233,6 +236,7 @@ addEventListener("message",e=>{
 	 * @type {{
 	 * 	action:string
 	 * 	eventPoint?:[number,number]
+	 * 	eventPointIndex?:number
 	 * 	value?: number;
 	 * }}
 	 */
@@ -240,7 +244,7 @@ addEventListener("message",e=>{
 
 	if (data.action == "findPath") {
 		if (!data.eventPoint) throw new Error(`findPath called with no corresponding event. Message data:\n${data}`);
-		findPath(data.eventPoint);
+		findPath(data.eventPoint, data.eventPointIndex);
 	}
 	if (data.action=="setchip") {
 		if (!data.value) return;
