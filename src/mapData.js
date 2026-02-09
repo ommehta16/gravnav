@@ -69,7 +69,7 @@ export class Graph {
 	 * @param {(percentage:number)=>void} updateFunc callback for relevant distance traversed %ages
 	 * @param {number} timeout Maximum amount of time to process before assuming there's a problem
 	 */
-	findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, timeout=15) {
+	async findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, timeout=15) {
 		const SPICINESS =  1+chipotleness; // speed up by chipotleness
 		let timeRemaining=true;
 		const timer = setTimeout(()=>{timeRemaining=false;console.log("times up!")},timeout*1000);

@@ -50,6 +50,39 @@ L.rectangle(clampWithin, {color: "black", weight: 2,fillColor: "transparent",int
 // @ts-ignore
 let boundsRect = L.rectangle([[0,0],[0,0]], {color: "#ff7800", weight: 1,interactive:false}).addTo(map);
 
+class Intro extends EventTarget {
+	state=0;
+	constructor() {
+		super();
+		this.addEventListener("onepoint",this.advance.bind(this,1));
+		this.addEventListener("twopoint",this.advance.bind(this,2)); // 2 points
+		this.addEventListener("mapLoad",this.advance.bind(this,3)); // load
+		this.addEventListener("zoom",this.advance.bind(this,4));
+		this.state=0;
+	}
+
+	advance(stage=0) {
+		if (stage < this.state) return;
+		const el = document.querySelector("#intro-text i");
+		if (!el) return;
+		
+		let text="";
+		text = [
+			"Click anywhere on the map", // start -->
+			"Choose another point", // they've clicked 1 -->
+			"Route may take a min to load...", // they've clicked 2 -->
+			"Zoom in and explore the route!", // route just loaded
+			`Keep exploring!`
+		][stage];
+
+		el.innerHTML=text;
+	}
+}
+
+const intro = new Intro();
+
+map.on("zoomend",()=>{intro.dispatchEvent(new Event("zoom"))});
+
 /** @type {any[]} */
 let circles = [];
 
@@ -141,6 +174,7 @@ mapDataWorker.addEventListener("message",e=>{
 		document.querySelector("#output")?.setAttribute("has-content","");
 		pushUpdate("");
 		setLoadingBar(100, "done!");
+		intro.dispatchEvent(new Event("mapLoad"));
 	}
 	if (data.from == "findPathUpdate") setLoadingBar(data.progress, data.routeDesc);
 });
@@ -216,12 +250,14 @@ function drawChosenPoints() {
 	if (!chosenPoints[1]) chosePointCircles[1].setLatLng([0,0]);
 
 	if (chosenPoints[0]) {
+		intro.dispatchEvent(new Event("onepoint"));
 		chosePointCircles[0].setLatLng(chosenPoints[0]);
 		let a = chosenPoints[0];
 		inputs[0].value = "lat" in a ? `${a.lat.toFixed(2)} ${a.lng.toFixed(2)}` : `${a[0]?.toFixed(2)} ${a[1]?.toFixed(2)}`;
 	}
 	else inputs[0].value="";
 	if (chosenPoints[1]) {
+		intro.dispatchEvent(new Event("twopoint"));
 		chosePointCircles[1].setLatLng(chosenPoints[1]);
 		let a = chosenPoints[1];
 		inputs[1].value = "lat" in a ? `${a.lat.toFixed(2)} ${a.lng.toFixed(2)}` : `${a[0]?.toFixed(2)} ${a[1]?.toFixed(2)}`;
@@ -270,4 +306,14 @@ document.querySelectorAll(".input-center div.point-selector").forEach(/** @param
 		lastFocused=idx;
 		document.body.setAttribute("last-focused",lastFocused.toString());
 	});
+});
+
+document.querySelector(".overlay button.route-control.clear")?.addEventListener("click",()=>mapDataWorker.postMessage({action: "findPath"}));
+
+document.querySelector(".overlay button.route-control.hide")?.addEventListener("click",()=>{
+	document.querySelector(".overlay.directions")?.classList.add("hidden");
+});
+
+document.querySelector("button.unhide")?.addEventListener("click",()=>{
+	document.querySelector(".overlay.directions")?.classList.remove("hidden");
 });

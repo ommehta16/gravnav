@@ -53,4 +53,5 @@ In any case, though, if you're self-hosting, you'll need to **change the backend
 
 *<small>Note: I used [node](https://nodejs.org/en) in all of the above examples, but everything **should** run just as fine on [bun](https://bun.com): this is as-of-yet untested though!</small>*
 ## TODO
-- [ ] Make the top-left panel look nicer!
+- [x] Make the top-left panel look nicer!
+- [ ] Add mouse-following (small) note with current action

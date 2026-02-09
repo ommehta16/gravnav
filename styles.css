@@ -451,6 +451,8 @@ div.point-selector input {
 	border-top-left-radius: calc(0.5rem - 2px);
 	border-top-right-radius: calc(0.5rem - 2px);
 	border-bottom-right-radius: calc(0.5rem - 2px);
+
+	transition: background 0.2s;
 }
 
 .input-center div.point-selector[data-unselected] {
@@ -485,6 +487,12 @@ div.point-selector:has(input:focus-visible),
 body[last-focused="0"] div.point-selector:first-child,
 body[last-focused="1"] div.point-selector:last-child {
 	border-color:var(--accent);
+}
+
+div.point-selector:has(input:focus-visible) input,
+body[last-focused="0"] div.point-selector:first-child input,
+body[last-focused="1"] div.point-selector:last-child input {
+	background: color-mix(in lch shorter hue, var(--accent) 10%,white 90%);
 }
 
 div.point-selector button.submit-point {
@@ -534,8 +542,47 @@ div.point-selector button.submit-point:active {
 	transition: left 0.5s;
 }
 
-.directions:has(#output[has-content]) {
+.directions:has(#output[has-content]):not(.hidden) {
 	left:0;
+}
+
+button.unhide {
+	position:absolute;
+	left:-1rem;
+	/* top:0rem; */
+	bottom:33%;
+
+	border:none;
+	background: rgba(255, 255, 255, 0.6);
+	border: 2px solid #aaa;
+	backdrop-filter: blur(2rem);
+
+	font-size: 0.75rem;
+	padding:0.25rem;
+	width: 1.5rem;
+	height: 3rem;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-top-right-radius: 0.25rem;
+	border-bottom-right-radius: 0.25rem;
+	border: 2px solid #aaa;
+	opacity:0;
+
+	transition: opacity 0.2s, background 0.2s, border 0.2s;
+
+	&:hover {
+		cursor: pointer;
+		background: rgba(200, 200, 200, 0.6);
+		border: 2px solid #ccc;
+	}
+}
+
+/* I hate this */
+#top-left-info:has(.directions.hidden):has(#output[has-content]) button.unhide {
+	opacity: 1;
+	pointer-events: all;
 }
 
 .leaflet-grab {
@@ -576,4 +623,12 @@ button.route-control.hide {
 
 button.route-control.clear {
 	bottom:1rem;
+}
+
+#intro-text {
+	color:gray;
+	margin:0;
+	font-style: italic;
+	margin-top:0.5rem;
+	font-size:0.75rem;
 }

@@ -146,7 +146,7 @@ async function getMap() {
 }
 
 let chipotleness=1;
-/** @param {[number,number]} eventPoint @param {number} eventPointIndex */ 
+/** @param {[number,number]|null} eventPoint @param {number} eventPointIndex */ 
 async function findPath(eventPoint,eventPointIndex=-1) {
 	/** 
 	 * @type {{
@@ -165,6 +165,13 @@ async function findPath(eventPoint,eventPointIndex=-1) {
 		normalRoute: null,
 		navigation: "",
 		error:""
+	}
+
+	if (!eventPoint) {
+		chosenPoints = [null,null];
+		toReturn.chosenPoints=[null,null];
+		postMessage(toReturn);
+		return;
 	}
 
 	const clickPoint = toLatLng(eventPoint);
@@ -196,7 +203,7 @@ async function findPath(eventPoint,eventPointIndex=-1) {
 	postMessage({...toReturn,navigation:`<span class="thinking">thinking...</span>`});
 	console.log("searching for path...");
 	let start=Date.now();
-	const normalPath = graph.findPath(chosenPoints[0],chosenPoints[1],0,percentage=>{
+	const normalPath = await graph.findPath(chosenPoints[0],chosenPoints[1],0,percentage=>{
 		postMessage({from:"findPathUpdate",progress:percentage*0.2,routeDesc:`${Math.floor(percentage*0.2)}% • normal route`});
 	});
 	toReturn.normalRoute=normalPath.latLngs;
@@ -211,7 +218,7 @@ async function findPath(eventPoint,eventPointIndex=-1) {
 		return;
 	}
 
-	const chipotlePath = graph.findPath(chosenPoints[0],chosenPoints[1],chipotleness,percentage=>{
+	const chipotlePath = await graph.findPath(chosenPoints[0],chosenPoints[1],chipotleness,percentage=>{
 		postMessage({from:"findPathUpdate",progress:20+percentage*0.8,routeDesc:`${Math.floor(20+percentage*0.8)}% • chipotle route`});
 	});
 	console.log("searching for goofy path")
@@ -235,7 +242,7 @@ addEventListener("message",e=>{
 	/** 
 	 * @type {{
 	 * 	action:string
-	 * 	eventPoint?:[number,number]
+	 * 	eventPoint?:[number,number]|null
 	 * 	eventPointIndex?:number
 	 * 	value?: number;
 	 * }}
@@ -243,14 +250,16 @@ addEventListener("message",e=>{
 	const data = e.data;
 
 	if (data.action == "findPath") {
-		if (!data.eventPoint) throw new Error(`findPath called with no corresponding event. Message data:\n${data}`);
+		if (!data.eventPoint) data.eventPoint=null;
+		// if (!data.eventPoint) throw new Error(`findPath called with no corresponding event. Message data:\n${data}`);
+		console.log("Got request", data);
 		findPath(data.eventPoint, data.eventPointIndex);
 	}
 	if (data.action=="setchip") {
 		if (!data.value) return;
 		chipotleness = data.value;
 	}
-})
+});
 
 const boundsPromise = generateBoundsOrder().then(updateQuery);
 boundsPromise.then(getMap);
