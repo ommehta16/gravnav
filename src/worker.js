@@ -146,6 +146,7 @@ async function getMap() {
 }
 
 let chipotleness=1;
+let currentId=0;
 /** @param {[number,number]|null} eventPoint @param {number} eventPointIndex */ 
 async function findPath(eventPoint,eventPointIndex=-1) {
 	/** 
@@ -196,16 +197,20 @@ async function findPath(eventPoint,eventPointIndex=-1) {
 	toReturn.chosenPoints=[chosenPoints[0] ? (graph.nodes.get(chosenPoints[0])?.coords ?? null) : null, 
 						   chosenPoints[1] ? (graph.nodes.get(chosenPoints[1])?.coords ?? null) : null];
 	console.log("endpoints found");
+	
 	if (!(chosenPoints[0] && chosenPoints[1])) {
 		postMessage(toReturn);
 		return;
 	}
+	const routePoints = [chosenPoints[0],chosenPoints[1]];
+
 	postMessage({...toReturn,navigation:`<span class="thinking">thinking...</span>`});
-	console.log("searching for path...");
+	console.log("searching for path...",);
+	currentId=Math.floor(Math.random()*32_000);
 	let start=Date.now();
-	const normalPath = await graph.findPath(chosenPoints[0],chosenPoints[1],0,percentage=>{
+	const normalPath = await graph.findPath(routePoints[0],routePoints[1],0,percentage=>{
 		postMessage({from:"findPathUpdate",progress:percentage*0.2,routeDesc:`${Math.floor(percentage*0.2)}% • normal route`});
-	});
+	},id=>id==currentId,currentId);
 	toReturn.normalRoute=normalPath.latLngs;
 	console.log(`${(Date.now()-start)/1000} seconds to get normal path`);
 	postMessage({...toReturn,navigation:`<span class="thinking">waiting on Chipotle-d path...</span>`});
@@ -218,24 +223,26 @@ async function findPath(eventPoint,eventPointIndex=-1) {
 		return;
 	}
 
-	const chipotlePath = await graph.findPath(chosenPoints[0],chosenPoints[1],chipotleness,percentage=>{
+	currentId=Math.floor(Math.random()*32_000);
+	const chipotlePath = await graph.findPath(routePoints[0],routePoints[1],chipotleness,percentage=>{
 		postMessage({from:"findPathUpdate",progress:20+percentage*0.8,routeDesc:`${Math.floor(20+percentage*0.8)}% • chipotle route`});
-	});
+	},id=>id==currentId,currentId);
 	console.log("searching for goofy path")
 	if (!chipotlePath) {
 		postMessage(toReturn);
 		return;
 	}
+	console.log("hello?");
 	console.log(`${(Date.now()-start)/1000} seconds to get goofy path`);
 	if (!normalPath) {
 		postMessage(toReturn);
 		return;
 	}
-	console.log("got paths!");
 	toReturn.chipotleRoute=chipotlePath.latLngs;
 	
 	toReturn.navigation=`<div><h3>Regular Route</h3>${normalPath.navigation}</div><div><h3>"Chipotle-d" Route</h3>${chipotlePath.navigation}</div>`;
 	postMessage(toReturn);
+	console.log("Sent paths");
 }
 
 addEventListener("message",e=>{

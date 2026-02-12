@@ -130,7 +130,11 @@ mapDataWorker.addEventListener("message",e=>{
 	}
 	if (data.from == "findPath") {
 		// console.log(data);
-		if (!data.chosenPoints) return;
+		console.log("Recieved [some] path data");
+		if (!data.chosenPoints) {
+			console.log("No chosen points", data);
+			return;
+		}
 		chosenPoints = data.chosenPoints;
 		drawChosenPoints();
 

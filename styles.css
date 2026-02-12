@@ -569,13 +569,17 @@ button.unhide {
 	border-bottom-right-radius: 0.25rem;
 	border: 2px solid #aaa;
 	opacity:0;
-
-	transition: opacity 0.2s, background 0.2s, border 0.2s;
+	transform-origin: center left;
+	transition: opacity 0.2s, background 0.2s, border 0.2s, transform 0.2s;
 
 	&:hover {
 		cursor: pointer;
 		background: rgba(200, 200, 200, 0.6);
 		border: 2px solid #ccc;
+	}
+
+	&:active {
+		transform: scale(0.9);
 	}
 }
 

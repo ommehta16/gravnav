@@ -68,8 +68,10 @@ export class Graph {
 	 * @param {number} chipotleness scaling factor on the impact of chipotle distance on navigation
 	 * @param {(percentage:number)=>void} updateFunc callback for relevant distance traversed %ages
 	 * @param {number} timeout Maximum amount of time to process before assuming there's a problem
+	 * @param {(id:number)=>boolean} canContinue 
 	 */
-	async findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, timeout=15) {
+	async findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, canContinue=()=>true, id=Math.floor(Math.random()*10_000_000), timeout=30) {
+
 		const SPICINESS =  1+chipotleness; // speed up by chipotleness
 		let timeRemaining=true;
 		const timer = setTimeout(()=>{timeRemaining=false;console.log("times up!")},timeout*1000);
@@ -107,17 +109,32 @@ export class Graph {
 		visited.add(start);
 
 		const destCoords = this.nodes.get(end)?.coords;
-		if (!destCoords) throw new Error("Couldn't find destination coords");
+		if (!destCoords){
+			// console.log(this.nodes);
+			// console.log(end, this.nodes.get(end));
+			throw new Error("Couldn't find destination coords");
+		}
 
 		let found=false;
 		
 		let resultDist = 1e18;
 		let bestPercent=0;
+
+		let lastSpin=0;
 		while (!found) {
+			if (Date.now()-lastSpin > 25) {
+				await new Promise(resolve=>{setTimeout(resolve,0)});
+				lastSpin=Date.now();
+				if (canContinue(id)) continue;
+				// console.log("Cancelling!");
+				clearTimeout(timer);
+				return {latLngs:null, navigation:"Cancelled", error:"cancel"};
+			}
+			
 			const check = todo.pop();
 			if (!timeRemaining || !check) {
 				// updateFunc(100);
-				console.log(`timeRemaining:${timeRemaining}, check:${check}`)
+				// console.log(`timeRemaining:${timeRemaining}, check:${check}`)
 				return {
 					latLngs:null,
 					navigation:"Could not find route",
