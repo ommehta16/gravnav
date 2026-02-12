@@ -512,6 +512,7 @@ div.point-selector button.submit-point {
 	transform: scale(1);
 	transition: transform 0.2s, border 0.2s, max-width 0.2s;
 	overflow:hidden;
+	color:black;
 	&:hover {
 		cursor: pointer;
 		border:1px solid white;
@@ -571,6 +572,7 @@ button.unhide {
 	opacity:0;
 	transform-origin: center left;
 	transition: opacity 0.2s, background 0.2s, border 0.2s, transform 0.2s;
+	color:black;
 
 	&:hover {
 		cursor: pointer;
@@ -607,6 +609,7 @@ button.route-control {
 	background: rgba(255, 255, 255, 0.6);
 	outline: 2px solid #aaa;
 	box-sizing: border-box;
+	color:black;
 
 	transition: outline 0.2s, background 0.2s, transform 0.2s;
 
