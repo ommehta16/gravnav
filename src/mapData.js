@@ -70,9 +70,9 @@ export class Graph {
 	 * @param {number} timeout Maximum amount of time to process before assuming there's a problem
 	 * @param {(id:number)=>boolean} canContinue 
 	 */
-	async findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, canContinue=()=>true, id=Math.floor(Math.random()*10_000_000), timeout=30) {
+	async findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, canContinue=()=>true, id=Math.floor(Math.random()*10_000_000), timeout=60) {
 
-		const SPICINESS =  1+chipotleness; // speed up by chipotleness
+		const SPICINESS =  1+2*chipotleness; // speed up by chipotleness
 		let timeRemaining=true;
 		const timer = setTimeout(()=>{timeRemaining=false;console.log("times up!")},timeout*1000);
 
@@ -118,6 +118,8 @@ export class Graph {
 		let found=false;
 		
 		let resultDist = 1e18;
+		/** @type {number|null} */
+		let resultChipotles=null;
 		let bestPercent=0;
 
 		let lastSpin=0;
@@ -158,16 +160,16 @@ export class Graph {
 				const dist = startDistance+edgeLength;
 				const distanceRemaining = (distance(neighborCoords,destCoords))/1000;
 				const potential = distanceRemaining/50;
-				const radius=10_000;
+				const orbitDistance=2500;
 				let minChipDist = Infinity;
 				let mask=check.locationMask;
-				let i=0;
+				let i=-1;
 				if (chipotleness!=0) for (const [, loc] of this.locations) {
+					i++;
 					const dist = distance(loc, neighborCoords);
 					minChipDist=Math.min(minChipDist,dist);
-					if (BitWise.get(mask,i) || dist>radius) continue;
-					BitWise.set(mask,i,1);
-					i++;
+					if (BitWise.get(mask,i) || dist>orbitDistance) continue;
+					mask=BitWise.set(mask,i,1);
 				}
 				let chipotlePoints = 0;
 				const distKM = minChipDist/1000;
@@ -179,6 +181,7 @@ export class Graph {
 					console.log("WEVE GOT HIMMMM!!");
 					found=true;
 					resultDist = dist;
+					resultChipotles = (chipotleness!=0) ? BitWise.popCount(mask) : null;
 					break;
 				}
 				const newPercent = Math.floor(100*dist/(dist+potential*SPICINESS));
@@ -212,7 +215,7 @@ export class Graph {
 		clearTimeout(timer);
 		return {
 			latLngs: bruh,
-			navigation: `${Math.round(resultDist*100)/100}hr drive • ${Math.round(dist * 0.000621371*100)/100}mi<br/>`
+			navigation: `${Math.round(resultDist*100)/100}hr drive • ${Math.round(dist * 0.000621371*100)/100}mi${resultChipotles ? ` • ${resultChipotles} ${((resultChipotles??0)>1) ? "Chipotles" : "Chipotle"}` : ""}<br/>`
 		};
 	}
 

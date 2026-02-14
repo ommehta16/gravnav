@@ -273,6 +273,7 @@ dialog a:hover {
 	display: flex;
 	flex-direction: column;
 	gap:1rem;
+	padding-right: 2rem;
 }
 
 #output div:last-child {
@@ -549,26 +550,26 @@ div.point-selector button.submit-point:active {
 
 button.unhide {
 	position:absolute;
-	left:-1rem;
+	left:calc(-1rem - 100%);
 	/* top:0rem; */
 	bottom:33%;
 
 	border:none;
-	background: rgba(255, 255, 255, 0.6);
-	border: 2px solid #aaa;
+	background: white;/*rgba(255, 255, 255, 0.6);*/
 	backdrop-filter: blur(2rem);
-
+	
 	font-size: 0.75rem;
 	padding:0.25rem;
 	width: 1.5rem;
 	height: 3rem;
-
+	
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border-top-right-radius: 0.25rem;
 	border-bottom-right-radius: 0.25rem;
 	border: 2px solid #aaa;
+	border-left:none;
 	opacity:0;
 	transform-origin: center left;
 	transition: opacity 0.2s, background 0.2s, border 0.2s, transform 0.2s;
@@ -588,6 +589,7 @@ button.unhide {
 /* I hate this */
 #top-left-info:has(.directions.hidden):has(#output[has-content]) button.unhide {
 	opacity: 1;
+	left: -1rem;
 	pointer-events: all;
 }
 
@@ -638,4 +640,12 @@ button.route-control.clear {
 	font-style: italic;
 	margin-top:0.5rem;
 	font-size:0.75rem;
+}
+
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom:1rem;
+}
+
+.leaflet-left .leaflet-control-scale {
+	margin-left:1rem;
 }

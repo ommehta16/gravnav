@@ -1,6 +1,10 @@
 // @ts-check
 import "./LinkedList.js";
 import "./src/format.js";
+
+// import BitWise from "./src/bitwise.js";
+// window.BitWise=BitWise;
+
 /** @import * as L from "./leaflet/dist/leaflet-src.esm.js" */
 
 // @ts-ignore
@@ -36,7 +40,10 @@ const map = window.map = L.map(mapElement,{
 	zoomControl: false,
 	attributionControl: false,
 	preferCanvas:true
-}).setView([(mapCenter[0][0] + mapCenter[1][0])/2,(mapCenter[0][1] + mapCenter[1][1])/2], 9);
+}).setView([(clampWithin[0][0] + clampWithin[1][0])/2,(clampWithin[0][1] + clampWithin[1][1])/2], 9);
+
+// @ts-ignore
+L.control.scale().addTo(map);
 
 // @ts-ignore
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

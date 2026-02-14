@@ -25,7 +25,7 @@ export default class BitWise {
 	 */
 	static set(num, i, val) {
 		const mask = 1n<<BigInt(i);
-		return Boolean(num&mask)==val ? num : num^(num&mask);
+		return Boolean(num&mask)==Boolean(val) ? num : num^mask;
 	}
 	
 	/** 
@@ -33,7 +33,7 @@ export default class BitWise {
 	 */
 	static popCount(num){
 		let cnt=0;
-		for (let n=num;n;n<<=1n) if (n%2n) cnt++;
+		for (let n=num;n;n>>=1n) if (n%2n) cnt++;
 		return cnt;
 	}
 }
