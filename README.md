@@ -1,16 +1,10 @@
 # Gravnav
 *maximize burritos*
 
-## How do I use it?
-Gravnav is now **public**! You can mess around with it at [ommehta16.github.io/gravnav](https://ommehta16.github.io/gravnav)!
 
-[gif goes here]
+![Demo of GravNav running](demo.gif)
 
-The UI is pretty minimal, so using it is really simple. Just **click on two points** on the map, then wait for the map to calculate a route! You'll get a progress indicator at the bottom, then a route summary in the "main panel" in the top left once it's done loading.
-
-When you initially load the site, it will take a few seconds to load in all the map chunks. Navigation data is only loaded within the black-outlined rectangle (so that RAM usage doesn't go through the roof). Loaded chunks are tinted green; unloaded chunks within the rectangle are their normal color; the chunk that is currently loading is orange.
-
-Once the map is loaded, the **will** use a not-insignificant amount of memory on your machine. This is just a byproduct of the "split work" architecture I used! More on this in ["How does it work?"](#how-does-it-work), but TL;DR: about 10% of the points that define the lines are needed on **your machine**, since its the one calculating the route.
+You can play around with GravNav at **[ommehta16.github.io/gravnav](https://ommehta16.github.io/gravnav)**: just click two points, wait for a route, then explore!
 
 ## What is GravNav?
 
@@ -18,8 +12,6 @@ A little project I've been working on!
 
 Uses A* graph traversal, the [OpenStreetMap Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API), express.js, hopes, dreams, and an INCREDIBLE amount of duct tape to show you driving routes that get "subtly" attracted to nearby Chipotles
 
-## How does it work?
-I'll write more here soon!
 
 ## Running GravNav
 
@@ -29,7 +21,8 @@ If opening `index.html` doesn't cause chunks to start loading, it's likely becau
 
 In this case, I've included [`silly-server.py`](/silly-server.py). If you'd like to run it this way, ensure that you have Python>3.13. Then run:
 ```bash
-python3 -m pip install flask; python3 silly-server.py
+python3 -m pip install flask
+python3 silly-server.py
 ```
 
 Then you should be able to load gravnav on [`localhost:3000`](http://localhost:3000)
@@ -51,7 +44,25 @@ You can also get set up with a remote proxy! The nginx config for the server is 
 -----
 In any case, though, if you're self-hosting, you'll need to **change the backend URL in `getdata.js`**. Just set `OSM_API_URL` to the url of your server, and you're good to go!
 
-*<small>Note: I used [node](https://nodejs.org/en) in all of the above examples, but everything **should** run just as fine on [bun](https://bun.com): this is as-of-yet untested though!</small>*
-## TODO
-- [x] Make the top-left panel look nicer!
-- [ ] Add mouse-following (small) note with current action
+
+## How does it work?
+
+On the server side,
+ - Get road + Chipotle data from OSM OverpassAPI for new tiles
+ - Simplify road graph (--> ~10% of nodes)
+ - Store road graph
+
+\
+When the client is initially loading, it:
+ - Floodfills to find the order to load chunks in
+ - Fetches chunk data from server
+ - Merges new data from chunk with existing data (resolve common nodes/intersection conflicts)
+ - Calculate new timespans for each road segment
+
+\
+And after we've gotten user input,
+ - Find the closest node to the click point
+ - Run regular A* on the graph for the closest route
+ - Run A* with [modified potentials](./src/mapData.js#L192) for the "Chipotle-est" route
+
+<small>*Thanks for reading this far! This project has been so fun to write over the past month-and-a-half :)*</small>
