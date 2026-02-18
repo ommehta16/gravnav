@@ -73,6 +73,7 @@ export class Graph {
 	async findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, canContinue=()=>true, id=Math.floor(Math.random()*10_000_000), timeout=60) {
 
 		const SPICINESS =  1+7.5*chipotleness; // speed up by chipotleness
+		const orbitDistance=2500;
 		let timeRemaining=true;
 		const timer = setTimeout(()=>{timeRemaining=false;console.log("times up!")},timeout*1000);
 
@@ -160,7 +161,6 @@ export class Graph {
 				const dist = startDistance+edgeLength;
 				const distanceRemaining = (distance(neighborCoords,destCoords))/1000;
 				const potential = distanceRemaining/50;
-				const orbitDistance=2500;
 				let minChipDist = Infinity;
 				let mask=check.locationMask;
 				let i=-1;
@@ -202,20 +202,32 @@ export class Graph {
 		let dist=0;
 		let prevNode=this.nodes.get(curr);
 		if (!prevNode) throw new Error("bruh");
+
+		let chipotleMask = 0n;
+		
 		while (curr != -1) {
 			const currNode = this.nodes.get(curr);
 			if (!currNode) throw new Error("bruh");
 			
+			let i=0;
+			for (const [, loc] of this.locations) {
+				i++;
+				const dist = distance(loc, currNode.coords);
+				if (BitWise.get(chipotleMask,i) || dist>orbitDistance) continue;
+				chipotleMask=BitWise.set(chipotleMask,i,1);
+			}
+
 			bruh.push(currNode.coords);
 			dist += distance(currNode.coords, prevNode.coords);
 			prevNode=currNode;
 			
 			curr = bestFrom.get(curr) ?? NaN;
 		}
+		resultChipotles=BitWise.popCount(chipotleMask);
 		clearTimeout(timer);
 		return {
 			latLngs: bruh,
-			navigation: `${Math.round(resultDist*100)/100}hr drive • ${Math.round(dist * 0.000621371*100)/100}mi${resultChipotles ? ` • ${resultChipotles} ${((resultChipotles??0)>1) ? "Chipotles" : "Chipotle"}` : ""}<br/>`
+			navigation: `${Math.round(resultDist*100)/100}hr drive • ${Math.round(dist * 0.000621371*100)/100}mi • ${resultChipotles} ${(resultChipotles!=1) ? "Chipotles" : "Chipotle"}<br/>`
 		};
 	}
 

@@ -209,7 +209,7 @@ async function findPath(eventPoint,eventPointIndex=-1) {
 	currentId=Math.floor(Math.random()*32_000);
 	let start=Date.now();
 	const normalPath = await graph.findPath(routePoints[0],routePoints[1],0,percentage=>{
-		postMessage({from:"findPathUpdate",progress:percentage*0.2,routeDesc:`${Math.floor(percentage*0.2)}% • normal route`});
+		postMessage({from:"findPathUpdate",progress:percentage*0.05,routeDesc:`${Math.floor(percentage*0.05)}% • normal route`});
 	},id=>id==currentId,currentId);
 	toReturn.normalRoute=normalPath.latLngs;
 	console.log(`${(Date.now()-start)/1000} seconds to get normal path`);
@@ -225,7 +225,7 @@ async function findPath(eventPoint,eventPointIndex=-1) {
 
 	currentId=Math.floor(Math.random()*32_000);
 	const chipotlePath = await graph.findPath(routePoints[0],routePoints[1],chipotleness,percentage=>{
-		postMessage({from:"findPathUpdate",progress:20+percentage*0.8,routeDesc:`${Math.floor(20+percentage*0.8)}% • chipotle route`});
+		postMessage({from:"findPathUpdate",progress:5+percentage*0.95,routeDesc:`${Math.floor(5+percentage*0.95)}% • chipotle route`});
 	},id=>id==currentId,currentId);
 	console.log("searching for goofy path")
 	if (!chipotlePath) {
