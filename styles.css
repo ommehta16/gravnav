@@ -649,3 +649,13 @@ button.route-control.clear {
 .leaflet-left .leaflet-control-scale {
 	margin-left:1rem;
 }
+
+.fa-github {
+	color:black;
+}
+
+i.fa-github::after {
+	content: "";
+	display: inline;
+	margin-right: 0.9ch;
+}

@@ -72,7 +72,7 @@ export class Graph {
 	 */
 	async findPath(start, end, chipotleness=1, updateFunc=(percentage)=>{}, canContinue=()=>true, id=Math.floor(Math.random()*10_000_000), timeout=60) {
 
-		const SPICINESS =  1+2*chipotleness; // speed up by chipotleness
+		const SPICINESS =  1+7.5*chipotleness; // speed up by chipotleness
 		let timeRemaining=true;
 		const timer = setTimeout(()=>{timeRemaining=false;console.log("times up!")},timeout*1000);
 
@@ -174,7 +174,7 @@ export class Graph {
 				let chipotlePoints = 0;
 				const distKM = minChipDist/1000;
 				if (chipotleness!=0) {
-					chipotlePoints = 10-Math.min(BitWise.popCount(mask)/10,5)-Math.min(10/distKM, 5);
+					chipotlePoints = 10-Math.min(BitWise.popCount(mask)/10,2.5)-Math.min(10/distKM, 7.5);
 				}
 
 				if (neighbor == end) {

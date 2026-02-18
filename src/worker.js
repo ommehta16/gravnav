@@ -145,7 +145,7 @@ async function getMap() {
 	setTimeout(getMap,0);
 }
 
-let chipotleness=1;
+let chipotleness=0.025;
 let currentId=0;
 /** @param {[number,number]|null} eventPoint @param {number} eventPointIndex */ 
 async function findPath(eventPoint,eventPointIndex=-1) {
